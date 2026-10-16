@@ -1,0 +1,1229 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>Галицький тарок</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#1d3a6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Тарок">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&display=swap">
+<style>
+/* Макет: одна колонка на всю ширину телефону, кожен екран — один зрозумілий крок. Кольори: чорнильно-синій тарокової сорочки, золото тарілки (жидка), зелений/червоний для грошей. */
+:root {
+  --bg: #e9edf2;
+  --surface: #ffffff;
+  --ink: #0f1621;
+  --muted: #475264;
+  --line: #c3ccd8;
+  --primary: #1d3a6e;
+  --primary-ink: #ffffff;
+  --sel: #d6e3fa;
+  --gold: #8a5d00;
+  --gold-bg: #fbf1d9;
+  --plus: #0f6b35;
+  --minus: #b0231b;
+  --danger: #b0231b;
+  --shadow: 0 1px 2px rgba(15,22,33,.12);
+  --f-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --f-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d121a; --surface: #172030; --ink: #f2f5f9; --muted: #aab5c4; --line: #2e3a4c;
+    --primary: #9bbcff; --primary-ink: #0b1322; --sel: #233a66; --gold: #f0c35c; --gold-bg: #2b2412;
+    --plus: #63d792; --minus: #ff8e86; --danger: #ff8e86; --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d121a; --surface: #172030; --ink: #f2f5f9; --muted: #aab5c4; --line: #2e3a4c;
+  --primary: #9bbcff; --primary-ink: #0b1322; --sel: #233a66; --gold: #f0c35c; --gold-bg: #2b2412;
+  --plus: #63d792; --minus: #ff8e86; --danger: #ff8e86; --shadow: none; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body {
+  color: var(--ink); font-family: var(--f-body); font-size: 19px; line-height: 1.4;
+  -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
+}
+#app {
+  max-width: 560px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 120px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+h1, h2 { font-family: var(--f-display); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: 26px; }
+h2 { font-size: 23px; line-height: 1.25; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 17px; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.plus { color: var(--plus); }
+.minus { color: var(--minus); }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; gap: 12px; }
+.row > * { flex: 1 1 0; min-width: 0; }
+
+button {
+  font: inherit; color: inherit; cursor: pointer; border: 0; background: none;
+  min-height: 60px; border-radius: 14px; padding: 10px 16px; touch-action: manipulation;
+}
+button:focus-visible, input:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.btn { width: 100%; font-size: 20px; font-weight: 650; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+.btn-primary { background: var(--primary); color: var(--primary-ink); }
+.btn-big { min-height: 76px; font-size: 23px; }
+.btn-second { background: var(--surface); border: 2px solid var(--line); box-shadow: var(--shadow); }
+.btn-danger { background: var(--surface); border: 2px solid var(--danger); color: var(--danger); }
+.btn-text { min-height: 56px; color: var(--primary); text-decoration: underline; text-underline-offset: 4px; font-size: 18px; }
+.btn:disabled { opacity: .45; cursor: default; }
+
+.opt {
+  width: 100%; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--surface); border: 2px solid var(--line); min-height: 68px; font-size: 21px; font-weight: 600;
+  box-shadow: var(--shadow);
+}
+.opt .sub { font-size: 17px; font-weight: 500; color: var(--muted); }
+.opt .opt-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.opt .tick { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; font-size: 18px; }
+.opt.sel { border-color: var(--primary); background: var(--sel); }
+.opt.sel .tick { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.opt.sel .tick::after { content: "✓"; }
+
+.seg { display: grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 8px; }
+.seg button { background: var(--surface); border: 2px solid var(--line); font-size: 18px; font-weight: 600; padding: 6px 4px; min-height: 58px; line-height: 1.15; }
+.seg button.sel { border-color: var(--primary); background: var(--sel); }
+.seg.two { grid-template-columns: 1fr 1fr; }
+
+.card { background: var(--surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--line); }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; }
+.topbar .back { min-height: 56px; padding: 8px 14px 8px 4px; font-size: 19px; color: var(--primary); font-weight: 600; }
+
+.balances { display: flex; flex-direction: column; }
+.bal { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 14px 4px; border-bottom: 1px solid var(--line); }
+.bal:last-child { border-bottom: 0; }
+.bal .name { font-size: 22px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.bal .val { font-size: 28px; font-weight: 750; }
+.zero { color: var(--muted); }
+
+.jidok { background: var(--gold-bg); border: 2px solid var(--gold); color: var(--ink); border-radius: 16px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.jidok .lbl { font-weight: 650; }
+.jidok .lbl small { display: block; font-weight: 500; color: var(--muted); font-size: 16px; }
+.jidok .val { font-size: 26px; font-weight: 750; color: var(--gold); }
+
+.progress { display: flex; gap: 5px; }
+.progress span { height: 6px; flex: 1; border-radius: 3px; background: var(--line); }
+.progress span.on { background: var(--primary); }
+.stepnum { font-size: 16px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+
+.wizard-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--bg); border-top: 1px solid var(--line);
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.wizard-nav .inner { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: 2fr 3fr; gap: 10px; }
+.wizard-nav .btn { white-space: nowrap; padding: 8px 10px; }
+
+.lines { display: flex; flex-direction: column; }
+.line { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.line:last-child { border-bottom: 0; }
+.line > :first-child { min-width: 0; }
+.line .why { font-size: 16px; color: var(--muted); display: block; }
+.person { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.person:last-child { border-bottom: 0; }
+.person .name { font-weight: 650; font-size: 21px; min-width: 0; overflow-wrap: anywhere; }
+.person .total { font-size: 24px; font-weight: 750; text-align: right; }
+.person .how { grid-column: 1 / -1; font-size: 16px; color: var(--muted); }
+
+.bonus { border: 2px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden; }
+.bonus.on { border-color: var(--primary); }
+.bonus > .opt { border: 0; border-radius: 0; box-shadow: none; }
+.bonus.on > .opt { background: var(--sel); }
+.bonus .cfg { padding: 14px; display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--line); }
+.q { font-weight: 650; font-size: 18px; margin-bottom: 6px; }
+.result-pill { font-size: 17px; font-weight: 650; padding: 10px 12px; border-radius: 10px; background: var(--bg); }
+.divider { font-size: 17px; color: var(--muted); font-weight: 600; text-align: center; padding-top: 4px; }
+
+.hist { width: 100%; text-align: left; display: block; background: var(--surface); border: 2px solid var(--line); box-shadow: var(--shadow); padding: 12px 14px; }
+.hist .h1 { font-weight: 650; font-size: 19px; }
+.hist .h1 b { font-family: var(--f-display); font-size: 17px; margin-right: 6px; }
+.hist .deltas { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; margin-top: 8px; font-size: 17px; }
+.hist .deltas div { display: flex; justify-content: space-between; gap: 8px; min-width: 0; }
+.hist .deltas span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+
+.transfer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 21px; }
+.transfer:last-child { border-bottom: 0; }
+.transfer .who { min-width: 0; overflow-wrap: anywhere; }
+.transfer .arrow { color: var(--muted); }
+.transfer .amt { font-weight: 750; font-size: 24px; }
+
+input.name-in { width: 100%; font: inherit; font-size: 22px; min-height: 60px; padding: 10px 14px; border-radius: 14px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); }
+label.lab { font-weight: 650; font-size: 18px; display: block; margin-bottom: 6px; }
+.err { color: var(--danger); font-weight: 600; }
+
+.overlay { position: fixed; inset: 0; z-index: 20; background: rgba(5,10,18,.55); display: flex; align-items: flex-end; justify-content: center; padding: 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+.dialog { background: var(--surface); color: var(--ink); width: 100%; max-width: 520px; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.dialog p { font-size: 20px; }
+
+.toast { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; display: flex; justify-content: center;
+  padding: 12px max(12px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); pointer-events: none; }
+.toast .t { pointer-events: auto; background: var(--ink); color: var(--bg); border-radius: 16px; padding: 14px 16px; width: 100%; max-width: 540px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.3); }
+.toast .t .tl { display: flex; justify-content: space-between; gap: 10px; font-size: 18px; }
+.toast .t .ttl { font-weight: 700; font-size: 19px; }
+.toast .t .tl .plus, .toast .t .tl .minus { color: inherit; font-weight: 750; }
+.toast .t .row button { min-height: 52px; background: transparent; border: 2px solid currentColor; color: inherit; font-weight: 650; font-size: 18px; }
+.pts { display: flex; align-items: baseline; justify-content: center; gap: 12px; padding: 8px 0 0; }
+.pts .num { font-family: var(--f-display); font-size: 64px; font-weight: 700; line-height: 1; }
+.pts small { font-size: 18px; color: var(--muted); }
+.pts-status { text-align: center; font-weight: 650; font-size: 20px; min-height: 28px; }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pad button { min-height: 68px; font-size: 28px; font-weight: 650; background: var(--surface); border: 2px solid var(--line); box-shadow: var(--shadow); }
+.pad button.fn { font-size: 18px; color: var(--muted); }
+.pad button:active { background: var(--sel); }
+@media (prefers-reduced-motion: no-preference) {
+  .screen { animation: in .18s ease-out; }
+  @keyframes in { from { transform: translateY(6px); opacity: .6; } to { transform: none; opacity: 1; } }
+}
+</style>
+</head>
+<body>
+
+
+<div id="app"></div>
+<div id="layer"></div>
+
+<script>
+/*LOGIC-START*/
+// ====================== ПРАВИЛА (усі числа тут) ======================
+const RULES = {
+  bids: {
+    trijka: { name: 'Трійка', value: 5 },
+    dvijka: { name: 'Двійка', value: 10 },
+    odynka: { name: 'Одинка', value: 15 },
+    solo:   { name: 'Сольо',  value: 20, alwaysAlone: true, noKupno: true, noSamBonus: true },
+  },
+  bidOrder: ['trijka', 'dvijka', 'odynka', 'solo'],
+  kontra: [
+    { m: 1, name: 'Немає' },
+    { m: 2, name: 'Контра', short: 'Контра ×2' },
+    { m: 4, name: 'Ре', short: 'Ре ×4' },
+    { m: 8, name: 'Ре-ре', short: 'Ре-ре ×8' },
+  ],
+  kupno: { first: 1, other: 2 },          // індекс купна, діє лише на програш
+  sam: { announced: 10, talon: 5 },        // бонус «Сам»: оголошено на початку / цар знайшовся в купні
+  samMultipliedByKontra: true,             // «Сам» множиться на контру гри
+  samMultipliedByKupno: true,              // і на індекс купна при програші
+  bonuses: {
+    toletura:    { name: 'Толетура',         hint: 'Шкіз, Монд і Пагат в одній команді', silent: 5,  announced: 10 },
+    pagatUltimo: { name: 'Пагат ультім',     hint: 'Остання взятка Пагатом (I)',         silent: 5,  announced: 10,
+                   jidokShareSilent: 0.5, jidokShareAnnounced: 1, untaxed: true, jidokToWholeSide: true },  // жидок ділиться порівну на всю сторону
+    allKings:    { name: 'Всі царі',         hint: 'Зібрали всіх 4 королів',              silent: 10, announced: 20 },
+    kingUltimo:  { name: 'Цар на кінці',     hint: 'Остання взятка з викликаним королем', silent: 5,  announced: 10, needsPartner: true },
+    pagatFang:   { name: 'Пагат фанг',       hint: 'Зловили Пагата супротивників',        silent: 5,  announced: 10 },
+    mondFang:    { name: 'Монд фанг',        hint: 'Зловили Монда (XXI) Шкізом',          silent: 50, announced: null },
+    emperor:     { name: 'Імператорська взятка', hint: 'Шкіз, Монд і Пагат в одній взятці', silent: 75, announced: null },
+    valat:       { name: 'Валят',            hint: 'Усі взятки',                          silent: 50, announced: 100 },
+  },
+  bonusOrder: ['toletura', 'pagatUltimo', 'allKings', 'kingUltimo', 'pagatFang', 'mondFang', 'emperor', 'valat'],
+  taxRate: 0.10,                           // 10% виграшу в жидок
+  trischaken: { penalty: 10 },             // бургомістр платить кожному
+};
+
+// ====================== ПРАВИЛА: «Козацька традиційна» (Ю. М. Левицький, 1992) ======================
+const RULES_KOZAK = {
+  bids: {
+    trijka: { name: 'Трійка', value: 5 },
+    spid:   { name: 'Спід',   value: 5 },
+    dvijka: { name: 'Двійка', value: 10, variants: ['Перша', 'Друга', 'Третя'] },
+    odynka: { name: 'Одинка', value: 15, variants: ['Перша', 'Друга', 'Третя', 'Четверта', 'П’ята', 'Шоста'] },
+    solo:   { name: 'Сольо',  value: 20, noKupno: true },
+  },
+  bidOrder: ['trijka', 'spid', 'dvijka', 'odynka', 'solo'],
+  kontra: RULES.kontra,
+  half: 35,                  // виграш — більше 35 очок
+  cardOnWin: false,          // номер карти з купна множить лише програш
+  failedMultiplier: 2,       // невиконане голошення коштує подвійно (× контра)
+  kingInTalon: { talonConscious: 10, talonUnconscious: 5 }, // штраф за залишеного в купні короля
+  kupno: {
+    trijka: [[1, 'Взяв верхні три, не дивлячись на спідні'], [2, 'Взяв спідні три'], [3, 'Взяв верхні, подивившись на спідні']],
+    spid:   [[2, 'Взяв три спідні, не дивлячись на верхні'], [3, 'Взяв три верхні'], [4, 'Взяв спідні, подивившись на верхні']],
+    dvijka: {
+      1: [[1, 'Взяв верхні, не дивлячись на інші'], [2, 'Взяв середні'], [3, 'Взяв спідні'], [4, 'Взяв верхні, подивившись на інші'], [5, 'Взяв середні, подивившись на інші']],
+      2: [[2, 'Взяв середні, не дивлячись на інші'], [3, 'Взяв спідні, не дивлячись на верхні'], [4, 'Взяв верхні'], [5, 'Взяв середні, подивившись на інші'], [6, 'Взяв спідні, подивившись на інші']],
+      3: [[3, 'Взяв спідні, не дивлячись на інші'], [4, 'Взяв верхні, не дивлячись на середні'], [5, 'Взяв середні'], [6, 'Взяв спідні, подивившись на інші'], [7, 'Взяв верхні, подивившись на інші']],
+    },
+    odynkaSpan: 11,          // k-та одинка: карта від k до k+10
+  },
+  bonuses: {
+    taroks:      { name: 'Тароки', hint: 'Голосили 8 і більше тароків', countBased: true, minCount: 8, maxCount: 12, perCount: 5 }, // 8→5, 9→10 … 12→25
+    toletura:    { name: 'Толетура',     hint: 'Шкіз, Монд і Пагат в одній команді', silent: 5,  announced: 10 },
+    pagatUltimo: { name: 'Пагат ультім', hint: 'Остання взятка Пагатом (I)',         silent: 5,  announced: 10, jidokOnlyAnnounced: true },
+    pagatFang:   { name: 'Пагат фанг',   hint: 'Зловили Пагата супротивників',       silent: 5,  announced: 10, atEnd: 10 },
+    allKings:    { name: 'Всі царі',     hint: 'Зібрали всіх 4 королів',             silent: 10, announced: 20 },
+    kingUltimo:  { name: 'Цар на кінці', hint: 'Викликаний король на останній взятці', silent: 5, announced: 10, needsPartner: true },
+    kingFang:    { name: 'Цар фанг',     hint: 'Супротивники зловили викликаного короля', silent: 5, announced: null, atEnd: 10, needsPartner: true, fixedSide: 'opponents' },
+    mondFang:    { name: 'Монд фанг',    hint: 'Зловили Монда (XXI) Шкізом',         silent: 50, announced: null },
+    valat:       { name: 'Валят',        hint: 'Усі взятки',                         silent: 50, announced: 100 },
+  },
+  bonusOrder: ['taroks', 'toletura', 'pagatUltimo', 'pagatFang', 'allKings', 'kingUltimo', 'kingFang', 'mondFang', 'valat'],
+  taxRate: 0.10,
+};
+// «Козацька новітня»: торги, купно, бонуси й жидок як у традиційній, але очки не рахуються — лише виграли/програли
+const RULES_KOZAK_NEW = Object.assign({}, RULES_KOZAK, { noPoints: true });
+const VARIANTS = {
+  golden: { name: 'Золотий Галицький', sub: 'Львів, 2026 · ставка, купно ×1/×2, трішакен' },
+  kozak:  { name: 'Козацька традиційна', sub: 'за Юрієм Мирославом Левицьким, 1992 · очки понад 35, карта з купна' },
+  kozakNew: { name: 'Козацька новітня', sub: 'як традиційна, але без очок: лише виграли чи програли' },
+};
+function rulesFor(variant) { return variant === 'kozak' ? RULES_KOZAK : variant === 'kozakNew' ? RULES_KOZAK_NEW : RULES; }
+function kozakBidLabel(bid, v) {
+  const b = RULES_KOZAK.bids[bid]; if (!b) return '';
+  if (!b.variants || !v || v === 1) return b.name;
+  return `${b.variants[v - 1]} ${b.name.toLowerCase()}`;
+}
+/** Варіанти «котру карту взяв» для ставки → [[номер, опис]] */
+function kupnoOptions(bid, v) {
+  const K = RULES_KOZAK.kupno;
+  if (bid === 'trijka' || bid === 'spid') return K[bid];
+  if (bid === 'dvijka') return K.dvijka[v || 1];
+  if (bid === 'odynka') { const k = v || 1; return Array.from({ length: K.odynkaSpan }, (_, i) => [k + i, `${k + i}-та карта`]); }
+  return [[1, 'Без купна']];
+}
+
+function r4(x) { const v = Math.round(x * 10000) / 10000; return Object.is(v, -0) ? 0 : v; }
+function fmtNum(x) {
+  let v = Math.round(x * 100) / 100; if (Object.is(v, -0)) v = 0;
+  return Math.abs(v).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') || '0';
+}
+function money(x, signed) {
+  const v = Math.round(x * 100) / 100;
+  const sign = signed ? (v > 0 ? '+' : v < 0 ? '−' : '') : (v < 0 ? '−' : '');
+  return sign + fmtNum(v) + ' €';
+}
+function kontraName(m) { const k = RULES.kontra.find(k => k.m === m); return k ? k.name : '×' + m; }
+
+/**
+ * Чиста функція підрахунку однієї роздачі.
+ * round: { type:'normal'|'trischaken', declarer, partner (null = сам), bid, samMode:'announced'|'talon',
+ *          kupno:1|2, kontra:1|2|4|8, won:bool,
+ *          bonuses:[{key, side:'players'|'opponents', announced:bool, done:bool, kontra, players:[idx]}],
+ *          burgomaster }
+ * settings: { jidok: сума в жидку перед роздачею, names?: [4 імені], rules?: RULES }
+ * → { deltas[4], taxes[4], gross[4], payout[4], toJidok, fromJidok, jidokAfter, lines[], team[], alone, perS }
+ */
+function calculateRoundGolden(round, settings) {
+  settings = settings || {};
+  const R = settings.rules || RULES;
+  const N = settings.names || ['Гравець 1', 'Гравець 2', 'Гравець 3', 'Гравець 4'];
+  const jidokBefore = settings.jidok || 0;
+  const taxable = [0, 0, 0, 0], untaxed = [0, 0, 0, 0];
+  const lines = [];
+  let team = [], alone = false, perS = 0, pagat = null;
+
+  if (round.type === 'trischaken') {
+    const b = round.burgomaster, p = R.trischaken.penalty;
+    for (let i = 0; i < 4; i++) taxable[i] = i === b ? -3 * p : p;
+    team = [b];
+    lines.push({ text: `Бургомістр ${N[b]} платить кожному по ${money(p)}`, why: '36 і більше очок у трішакені', amount: -3 * p, who: 'b' });
+  } else {
+    const bid = R.bids[round.bid];
+    alone = !!bid.alwaysAlone || round.partner == null;
+    team = alone ? [round.declarer] : [round.declarer, round.partner];
+    const won = !!round.won;
+    const km = round.kontra || 1;
+    const kup = bid.noKupno ? 1 : (round.kupno || 1);
+    const lossMult = won ? 1 : kup;
+    let sTax = 0, sUntax = 0;
+
+    const g = bid.value * lossMult * km * (won ? 1 : -1);
+    sTax += g;
+    const gParts = [`${bid.name} ${fmtNum(bid.value)}`];
+    if (!won && kup > 1) gParts.push(`купно ×${kup}`);
+    if (km > 1) gParts.push(`${kontraName(km)} ×${km}`);
+    lines.push({ text: `Гра: ${bid.name}, ${won ? 'виграли' : 'програли'}`, why: gParts.join(' · '), amount: g, who: 'players' });
+
+    if (alone && !bid.noSamBonus) {
+      const base = round.samMode === 'talon' ? R.sam.talon : R.sam.announced;
+      const v = base * (R.samMultipliedByKupno ? lossMult : 1) * (R.samMultipliedByKontra ? km : 1) * (won ? 1 : -1);
+      sTax += v;
+      const p = [round.samMode === 'talon' ? 'цар знайшовся в купні' : 'оголошено на початку', fmtNum(base)];
+      if (R.samMultipliedByKupno && lossMult > 1) p.push(`купно ×${lossMult}`);
+      if (R.samMultipliedByKontra && km > 1) p.push(`${kontraName(km)} ×${km}`);
+      lines.push({ text: `Сам${won ? '' : ' (програв)'}`, why: p.join(' · '), amount: v, who: 'players' });
+    }
+
+    for (const b of (round.bonuses || [])) {
+      const def = R.bonuses[b.key]; if (!def) continue;
+      const ann = !!b.announced && def.announced != null;
+      const done = ann ? b.done !== false : true;
+      const base = ann ? def.announced : def.silent;
+      const bk = b.kontra || 1;
+      const v = base * bk * (done ? 1 : -1);          // з погляду сторони, що зробила/голосила
+      const pv = b.side === 'opponents' ? -v : v;      // з погляду тих, що грали
+      if (def.untaxed) sUntax += pv; else sTax += pv;
+      const p = [ann ? 'голошений' : 'неголошений', fmtNum(base)];
+      if (bk > 1) p.push(`${kontraName(bk)} ×${bk}`);
+      if (ann && !done) p.push('не виконали — платять');
+      lines.push({ text: def.name, why: p.join(' · '), amount: v, who: b.side === 'opponents' ? 'opponents' : 'players' });
+      if (b.key === 'pagatUltimo' && done) {
+        // Жидок отримує вся сторона, що зробила пагат: пара — навпіл, сам — один.
+        const who = b.side === 'opponents' ? [0, 1, 2, 3].filter(i => !team.includes(i)) : team.slice();
+        pagat = { share: ann ? def.jidokShareAnnounced : def.jidokShareSilent, who, ann };
+      }
+    }
+
+    perS = r4(sTax + sUntax);
+    for (let i = 0; i < 4; i++) {
+      const m = team.includes(i) ? (alone ? 3 : 1) : -1;
+      taxable[i] = sTax * m; untaxed[i] = sUntax * m;
+    }
+  }
+
+  const gross = [0, 1, 2, 3].map(i => r4(taxable[i] + untaxed[i]));
+  const taxes = [0, 1, 2, 3].map(i => r4(Math.max(0, Math.min(taxable[i], gross[i])) * R.taxRate));
+  const toJidok = r4(taxes.reduce((a, b) => a + b, 0));
+  const available = r4(jidokBefore + toJidok);
+  const payout = [0, 0, 0, 0];
+  let fromJidok = 0;
+  if (pagat) {
+    fromJidok = r4(available * pagat.share);
+    const part = fromJidok / pagat.who.length;
+    pagat.who.forEach(i => { payout[i] = r4(payout[i] + part); });
+    lines.push({ text: `Жидок за пагат ультім: ${pagat.who.map(i => N[i]).join(' і ')}`,
+      why: `${pagat.ann ? '100%' : '50%'} від ${money(available)}${pagat.who.length === 2 ? ', навпіл' : pagat.who.length > 2 ? `, на ${pagat.who.length}` : ''}`, amount: fromJidok, who: 'jidok' });
+  }
+  const deltas = [0, 1, 2, 3].map(i => r4(gross[i] - taxes[i] + payout[i]));
+  return { deltas, taxes, gross, payout, toJidok, fromJidok, jidokAfter: r4(available - fromJidok), lines, team, alone, perS };
+}
+
+
+/** Спільне завершення роздачі: податок у жидок, виплата або доплата жидка. */
+function finishRound(taxable, untaxed, jidokBefore, taxRate, op, N, lines) {
+  const gross = [0, 1, 2, 3].map(i => r4(taxable[i] + untaxed[i]));
+  const taxes = [0, 1, 2, 3].map(i => r4(Math.max(0, Math.min(taxable[i], gross[i])) * taxRate));
+  const toJidok = r4(taxes.reduce((a, b) => a + b, 0));
+  const available = r4(jidokBefore + toJidok);
+  const payout = [0, 0, 0, 0];
+  let fromJidok = 0, jidokIn = 0;
+  if (op && op.who.length) {
+    if (op.type === 'take') {
+      fromJidok = r4(available * op.share);
+      op.who.forEach(i => { payout[i] = r4(payout[i] + fromJidok / op.who.length); });
+      lines.push({ text: `Жидок за пагат ультім: ${op.who.map(i => N[i]).join(' і ')}`,
+        why: `${op.share === 1 ? '100%' : Math.round(op.share * 100) + '%'} від ${money(available)}${op.who.length === 2 ? ', навпіл' : op.who.length > 2 ? `, на ${op.who.length}` : ''}`, amount: fromJidok, who: 'jidok' });
+    } else if (op.type === 'pay') {
+      jidokIn = available;
+      op.who.forEach(i => { payout[i] = r4(payout[i] - jidokIn / op.who.length); });
+      lines.push({ text: `Пагат ультім не вийшов: ${op.who.map(i => N[i]).join(' і ')} доплачують у жидок`,
+        why: `стільки, скільки там є: ${money(available)}${op.who.length === 2 ? ', навпіл' : ''}`, amount: -jidokIn, who: 'jidokpay' });
+    }
+  }
+  const deltas = [0, 1, 2, 3].map(i => r4(gross[i] - taxes[i] + payout[i]));
+  return { deltas, taxes, gross, payout, toJidok, fromJidok, jidokIn, jidokAfter: r4(available - fromJidok + jidokIn) };
+}
+
+/**
+ * «Козацька традиційна». round: { type:'normal'|'pass', declarer, partner (null = сам),
+ *   kingMode:'own'|'talonTook'|'talonConscious'|'talonUnconscious', bid, bidVariant, card, kontra, points (0–70, тих, що грали),
+ *   bonuses:[{key, side, announced, done, kontra, count, atEnd}] }
+ */
+function calculateRoundKozak(round, settings) {
+  const R = settings.rules || RULES_KOZAK;
+  const N = settings.names || ['Гравець 1', 'Гравець 2', 'Гравець 3', 'Гравець 4'];
+  const jidokBefore = settings.jidok || 0;
+  const taxable = [0, 0, 0, 0], untaxed = [0, 0, 0, 0];
+  const lines = [];
+  if (round.type === 'pass') {
+    lines.push({ text: 'Всі сказали «пас» — перероздача', why: 'нікому нічого не рахується', amount: 0, who: 'none' });
+    return Object.assign(finishRound(taxable, untaxed, jidokBefore, R.taxRate, null, N, lines), { lines, team: [], alone: false, perS: 0, won: null });
+  }
+  const bid = R.bids[round.bid];
+  const alone = round.partner == null;
+  const team = alone ? [round.declarer] : [round.declarer, round.partner];
+  const pts = Math.max(0, Math.min(70, round.points || 0));
+  const won = R.noPoints ? !!round.won : pts > R.half;
+  const km = round.kontra || 1;
+  const card = bid.noKupno ? 1 : (round.card || 1);
+  const diff = R.noPoints ? 0 : won ? pts - R.half : R.half - pts;
+  const base = diff + bid.value;
+  const mult = km * (won ? (R.cardOnWin ? card : 1) : card);
+  let s = base * mult * (won ? 1 : -1);
+  const label = kozakBidLabel(round.bid, round.bidVariant);
+  const why = [R.noPoints ? `${label} ${fmtNum(bid.value)}` : `${diff} ${won ? 'понад' : 'до'} 35 + ${label} ${fmtNum(bid.value)} = ${fmtNum(base)}`];
+  if (!won && card > 1) why.push(`карта ×${card}`);
+  if (km > 1) why.push(`${kontraName(km)} ×${km}`);
+  lines.push({ text: R.noPoints ? `Гра: ${label}, ${won ? 'виграли' : 'програли'}` : `Гра: ${label}, ${pts} очок — ${won ? 'виграли' : 'програли'}`, why: why.join(' · '), amount: s, who: 'players' });
+
+  if (alone && R.kingInTalon[round.kingMode]) {
+    const p = R.kingInTalon[round.kingMode];
+    s -= p;
+    lines.push({ text: round.kingMode === 'talonConscious' ? 'Свідомо залишив короля в купні' : 'Король залишився в купні', why: `штраф ${fmtNum(p)}`, amount: -p, who: 'players' });
+  }
+
+  let op = null;
+  for (const b of (round.bonuses || [])) {
+    const def = R.bonuses[b.key]; if (!def) continue;
+    const side = def.fixedSide || b.side;
+    const bk = b.kontra || 1;
+    let v, whyB;
+    if (def.countBased) {
+      const c = Math.max(def.minCount, Math.min(def.maxCount, b.count || def.minCount));
+      const val = def.perCount * (c - def.minCount + 1);
+      // тароки тих, що грали, йдуть «за» них при виграші і «проти» при програші; тароки супротивників — завжди за супротивників
+      v = val * bk * (side === 'players' && !won ? -1 : 1);
+      whyB = [`${c} тароків = ${fmtNum(val)}`];
+      if (side === 'players' && !won) whyB.push('при програші — проти');
+    } else {
+      const ann = !!b.announced && def.announced != null;
+      const done = ann ? b.done !== false : true;
+      const atEnd = !ann && b.atEnd && def.atEnd;
+      const val = ann ? def.announced : atEnd ? def.atEnd : def.silent;
+      v = done ? val * bk : -val * bk * R.failedMultiplier;
+      whyB = [ann ? 'голошений' : 'неголошений', fmtNum(val)];
+      if (atEnd) whyB.push('на останній взятці');
+      if (!done) whyB.push(`не виконали — платять ×${R.failedMultiplier}`);
+      if (b.key === 'pagatUltimo' && ann) {
+        const ids = side === 'opponents' ? [0, 1, 2, 3].filter(i => !team.includes(i)) : team.slice();
+        op = done ? { type: 'take', share: 1, who: ids } : { type: 'pay', who: ids };
+      }
+    }
+    if (bk > 1) whyB.push(`${kontraName(bk)} ×${bk}`);
+    s += side === 'opponents' ? -v : v;
+    lines.push({ text: def.name, why: whyB.join(' · '), amount: v, who: side === 'opponents' ? 'opponents' : 'players' });
+  }
+  for (let i = 0; i < 4; i++) taxable[i] = s * (team.includes(i) ? (alone ? 3 : 1) : -1);
+  const fin = finishRound(taxable, untaxed, jidokBefore, R.taxRate, op, N, lines);
+  return Object.assign(fin, { lines, team, alone, perS: r4(s), won });
+}
+
+/** Головна функція: підрахунок однієї роздачі для вибраного варіанту правил. */
+function calculateRound(round, settings) {
+  settings = settings || {};
+  if (settings.variant === 'kozak' || settings.variant === 'kozakNew') return calculateRoundKozak(round, Object.assign({ rules: rulesFor(settings.variant) }, settings));
+  return calculateRoundGolden(round, settings);
+}
+
+/** Перерахунок усієї партії з історії. Баланс ніде не зберігається окремо. */
+function computeGame(rounds, startJidok, names, variant) {
+  let jidok = startJidok || 0;
+  const bal = [0, 0, 0, 0];
+  const results = [];
+  for (const r of rounds) {
+    const res = calculateRound(r, { jidok, names, variant });
+    res.jidokBefore = jidok;
+    for (let i = 0; i < 4; i++) bal[i] = r4(bal[i] + res.deltas[i]);
+    jidok = res.jidokAfter;
+    res.balAfter = bal.slice();
+    results.push(res);
+  }
+  return { balances: bal, jidok, results };
+}
+
+/** Мінімум переказів: спершу пари, що точно гасять одна одну, далі жадібно. */
+function settle(values) {
+  const items = values.map((v, i) => ({ i, v: Math.round(v * 100) })).filter(x => x.v !== 0);
+  const out = [];
+  for (const a of items) for (const b of items) {
+    if (a.v < 0 && b.v > 0 && a.v + b.v === 0) { out.push({ from: a.i, to: b.i, amount: b.v / 100 }); a.v = 0; b.v = 0; }
+  }
+  const debt = items.filter(x => x.v < 0), cred = items.filter(x => x.v > 0);
+  while (debt.length && cred.length) {
+    debt.sort((a, b) => a.v - b.v); cred.sort((a, b) => b.v - a.v);
+    const d = debt[0], c = cred[0], amt = Math.min(-d.v, c.v);
+    out.push({ from: d.i, to: c.i, amount: amt / 100 });
+    d.v += amt; c.v -= amt;
+    if (d.v === 0) debt.shift();
+    if (c.v === 0) cred.shift();
+  }
+  return out;
+}
+
+function runTests() {
+  const names = ['Северин', 'Ярина', 'Остап', 'Олесь'];
+  const S = 0, Y = 1, OS = 2, OL = 3;
+  const N = (o) => Object.assign({ type: 'normal', bid: 'trijka', kupno: 1, kontra: 1, won: true, bonuses: [] }, o);
+  const tol = [{ key: 'toletura', side: 'players', announced: false, kontra: 1 }];
+  const seq = [
+    [N({ declarer: S, partner: Y, kupno: 2, bonuses: tol }), [9, 9, -10, -10], 2],
+    [N({ declarer: OS, partner: OL, bonuses: [{ key: 'pagatFang', side: 'opponents', announced: false, kontra: 1 }] }), [9, 9, -10, -10], 2],
+    [N({ declarer: S, partner: Y }), [13.5, 13.5, -15, -15], 3],
+    [N({ declarer: OL, partner: OS, kupno: 1, won: false }), [18, 18, -20, -20], 4],
+    [N({ declarer: S, partner: Y, bonuses: [{ key: 'allKings', side: 'players', announced: false, kontra: 1 }] }), [31.5, 31.5, -35, -35], 7],
+    [N({ declarer: S, partner: Y, bid: 'dvijka' }), [40.5, 40.5, -45, -45], 9],
+    [N({ declarer: OL, partner: S, bonuses: tol }), [49.5, 30.5, -55, -36], 11],
+    [N({ declarer: S, partner: OL, bonuses: tol }), [58.5, 20.5, -65, -27], 13],
+  ];
+  let pass = 0, fail = 0;
+  const eq = (a, b) => Math.abs(a - b) < 1e-9;
+  const check = (label, got, exp, gj, ej) => {
+    const ok = got.every((v, i) => eq(v, exp[i])) && eq(gj, ej);
+    ok ? pass++ : fail++;
+    console[ok ? 'log' : 'error'](`${ok ? '✓' : '✗'} ${label}: [${got.join(', ')}] жидок ${gj}` + (ok ? '' : `  (очікувалось [${exp.join(', ')}] жидок ${ej})`));
+  };
+  const rounds = [];
+  seq.forEach(([r, exp, ej], k) => {
+    rounds.push(r);
+    const g = computeGame(rounds, 0, names);
+    check(`Роздача ${k + 1}`, g.balances, exp, g.jidok, ej);
+  });
+  const one = (label, r, exp, ej, j0) => { const g = computeGame([r], j0 || 0, names); check(label, g.balances, exp, g.jidok, ej); };
+  one('A+B, двійка, купно ×2, контра, програли', N({ declarer: 0, partner: 1, bid: 'dvijka', kupno: 2, kontra: 2, won: false }), [-40, -40, 36, 36], 8);
+  one('A сам (оголошено), трійка, виграв', N({ declarer: 0, partner: null, samMode: 'announced' }), [40.5, -15, -15, -15], 4.5);
+  one('Трішакен, бургомістр A', { type: 'trischaken', burgomaster: 0 }, [-30, 9, 9, 9], 3);
+  one('Дод.: пагат ультім неголош., жидок 10', N({ declarer: 0, partner: 1, bonuses: [{ key: 'pagatUltimo', side: 'players', announced: false, kontra: 1, }] }), [12.25, 12.25, -10, -10], 5.5, 10);
+  one('Дод.: пагат ультім голош., сам, жидок 10', N({ declarer: 0, partner: null, samMode: 'announced', bonuses: [{ key: 'pagatUltimo', side: 'players', announced: true, done: true, kontra: 1 }] }), [85, -25, -25, -25], 0, 10);
+  one('Дод.: Сольо програли (без купна і «Сам»)', N({ declarer: 0, partner: null, bid: 'solo', kupno: 2, won: false }), [-60, 18, 18, 18], 6);
+
+  // ---- «Козацька традиційна» ----
+  const K = (o) => Object.assign({ type: 'normal', bid: 'trijka', bidVariant: 1, card: 1, kontra: 1, points: 40, bonuses: [], declarer: 0, partner: 1 }, o);
+  const ok = (label, r, exp, ej, j0) => { const g = computeGame([r], j0 || 0, names, 'kozak'); check('Козацька: ' + label, g.balances, exp, g.jidok, ej); };
+  ok('трійка, 40 очок, виграли', K({}), [9, 9, -10, -10], 2);
+  ok('трійка, 2-га карта, 30 очок, програли', K({ card: 2, points: 30 }), [-20, -20, 18, 18], 4);
+  ok('трійка, 2-га карта, 40 очок, контра, виграли', K({ card: 2, kontra: 2 }), [18, 18, -20, -20], 4);
+  ok('сам, двійка, 4-та карта, 30 очок, контра, програв', K({ partner: null, kingMode: 'own', bid: 'dvijka', card: 4, points: 30, kontra: 2 }), [-360, 108, 108, 108], 36);
+  ok('голошена толетура не вийшла, виграли', K({ bonuses: [{ key: 'toletura', side: 'players', announced: true, done: false, kontra: 1 }] }), [-10, -10, 9, 9], 2);
+  ok('голошені 9 тароків, програли', K({ points: 30, bonuses: [{ key: 'taroks', side: 'players', count: 9, kontra: 1 }] }), [-20, -20, 18, 18], 4);
+  ok('голошений пагат ультім, жидок 10', K({ bonuses: [{ key: 'pagatUltimo', side: 'players', announced: true, done: true, kontra: 1 }] }), [25, 25, -20, -20], 0, 10);
+  ok('голошений пагат ультім не вийшов, жидок 10', K({ bonuses: [{ key: 'pagatUltimo', side: 'players', announced: true, done: false, kontra: 1 }] }), [-16, -16, 9, 9], 24, 10);
+  ok('неголошений пагат ультім, жидок 10', K({ bonuses: [{ key: 'pagatUltimo', side: 'players', announced: false, kontra: 1 }] }), [13.5, 13.5, -15, -15], 13, 10);
+  ok('свідомо залишив короля в купні', K({ partner: null, kingMode: 'talonConscious' }), [0, 0, 0, 0], 0);
+  ok('цар фанг на кінці', K({ bonuses: [{ key: 'kingFang', side: 'opponents', atEnd: true, kontra: 1 }] }), [0, 0, 0, 0], 0);
+  ok('свідомо залишив короля, 38 очок', K({ partner: null, kingMode: 'talonConscious', points: 38 }), [-6, 1.8, 1.8, 1.8], 0.6);
+  ok('всі пас', { type: 'pass' }, [0, 0, 0, 0], 0);
+  // ---- «Козацька новітня» (без очок) ----
+  const on = (label, r, exp, ej, j0) => { const g = computeGame([r], j0 || 0, names, 'kozakNew'); check('Новітня: ' + label, g.balances, exp, g.jidok, ej); };
+  const KN = (o) => Object.assign({ type: 'normal', bid: 'trijka', bidVariant: 1, card: 1, kontra: 1, won: true, bonuses: [], declarer: 0, partner: 1 }, o);
+  on('друга двійка, 4-та карта, контра, програли', KN({ bid: 'dvijka', bidVariant: 2, card: 4, kontra: 2, won: false }), [-80, -80, 72, 72], 16);
+  on('друга двійка, 4-та карта, контра, виграли', KN({ bid: 'dvijka', bidVariant: 2, card: 4, kontra: 2 }), [18, 18, -20, -20], 4);
+  on('трійка, неголошена толетура, виграли', KN({ bonuses: [{ key: 'toletura', side: 'players', announced: false, kontra: 1 }] }), [9, 9, -10, -10], 2);
+  on('сам, свідомо залишив короля, трійка, виграв', KN({ partner: null, kingMode: 'talonConscious' }), [-15, 4.5, 4.5, 4.5], 1.5);
+  on('голошені 8 тароків, програли', KN({ won: false, bonuses: [{ key: 'taroks', side: 'players', count: 8, kontra: 1 }] }), [-10, -10, 9, 9], 2);
+  console.log(`Тести: ${pass} пройдено, ${fail} не пройдено`);
+  return fail === 0;
+}
+/*LOGIC-END*/
+
+// ====================== СХОВИЩЕ ======================
+const KEY = 'tarok.v1.state', NAMES_KEY = 'tarok.v1.lastNames', UNDO_KEY = 'tarok.v1.undo', VAR_KEY = 'tarok.v1.lastVariant';
+function load(k, def) { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : def; } catch (e) { return def; } }
+function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+let state = load(KEY, { game: null });
+let undoStack = load(UNDO_KEY, []);
+function persist() { save(KEY, state); save(UNDO_KEY, undoStack.slice(-15)); }
+function snapshot(label) { undoStack.push({ label, game: JSON.parse(JSON.stringify(state.game)) }); if (undoStack.length > 15) undoStack.shift(); }
+function undo() {
+  const s = undoStack.pop(); if (!s) return;
+  state.game = s.game; persist();
+  ui = { screen: state.game ? 'main' : 'setup' };
+  render(); toast({ title: `Скасовано: ${s.label}` });
+}
+
+// ====================== ІНТЕРФЕЙС ======================
+const app = document.getElementById('app'), layer = document.getElementById('layer');
+let ui = { screen: state.game ? 'main' : 'setup' };
+let ACTIONS = [];
+const A = (fn) => { ACTIONS.push(fn); return ACTIONS.length - 1; };
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const cls = (v) => Math.round(v * 100) === 0 ? 'zero' : v > 0 ? 'plus' : 'minus';
+let lastRender = 0;
+
+function V() { return (state.game && state.game.variant) || 'golden'; }
+const isK = () => V() === 'kozak' || V() === 'kozakNew';
+const noPts = () => V() === 'kozakNew';
+function draftWon(d) { return noPts() ? d.won === true : d.points > 35; }
+function roundWon(r) { return isK() ? (noPts() ? !!r.won : r.points > 35) : r.won; }
+function RR() { return rulesFor(V()); }
+function names() { return state.game ? state.game.names : ['', '', '', '']; }
+function game() { const g = state.game; return computeGame(g.rounds, g.startJidok || 0, g.names, V()); }
+
+function go(screen, extra) { ui = Object.assign({ screen }, extra || {}); render(); window.scrollTo(0, 0); }
+
+function render() {
+  ACTIONS = [];
+  const s = ui.screen;
+  let html = '';
+  if (s === 'setup') html = vSetup();
+  else if (s === 'main') html = vMain();
+  else if (s === 'wizard') html = vWizard();
+  else if (s === 'history') html = vHistory();
+  else if (s === 'detail') html = vDetail();
+  else if (s === 'summary') html = vSummary();
+  app.innerHTML = `<div class="screen stack" style="gap:16px">${html}</div>`;
+  lastRender = Date.now();
+}
+
+app.addEventListener('click', onTap); layer.addEventListener('click', onTap);
+function onTap(e) {
+  const el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
+  if (Date.now() - lastRender < 280 && !el.closest('#layer') && !el.dataset.fast) return; // захист від подвійного натискання
+  const fn = ACTIONS[+el.dataset.a]; if (fn) fn(e);
+}
+
+function topbar(title, backFn, right) {
+  return `<div class="topbar">${backFn ? `<button class="back" data-a="${A(backFn)}">‹ Назад</button>` : '<span></span>'}${right || ''}</div>${title ? `<h1>${title}</h1>` : ''}`;
+}
+
+// ---------- Діалоги й сповіщення ----------
+function confirmBox(text, yes, onYes, danger) {
+  layer.innerHTML = `<div class="overlay" data-a="${A((e) => { if (e.target.classList.contains('overlay')) closeLayer(); })}"><div class="dialog">
+    <p>${text}</p>
+    <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-a="${A(() => { closeLayer(); onYes(); })}">${yes}</button>
+    <button class="btn btn-second" data-a="${A(closeLayer)}">Ні, залишити</button></div></div>`;
+}
+function closeLayer() { layer.innerHTML = ''; }
+let toastTimer = null;
+function toast({ title, rows, canUndo }) {
+  clearTimeout(toastTimer);
+  const el = document.getElementById('toast') || Object.assign(document.createElement('div'), { id: 'toast', className: 'toast' });
+  document.body.appendChild(el);
+  el.innerHTML = `<div class="t" role="status"><div class="ttl">${esc(title)}</div>
+    ${(rows || []).map(r => `<div class="tl"><span>${esc(r[0])}</span><span class="num ${cls(r[1])}">${money(r[1], true)}</span></div>`).join('')}
+    <div class="row">${canUndo ? '<button id="tUndo">Скасувати</button>' : ''}<button id="tOk">Добре</button></div></div>`;
+  const hide = () => { el.remove(); };
+  el.querySelector('#tOk').onclick = hide;
+  if (canUndo) el.querySelector('#tUndo').onclick = () => { hide(); undo(); };
+  toastTimer = setTimeout(hide, rows && rows.length ? 7000 : 4000);
+}
+
+// ---------- Нова партія ----------
+function readNames() { return [0, 1, 2, 3].map(i => { const el = document.getElementById('n' + i); return el ? el.value : ''; }); }
+function vSetup() {
+  const pre = ui.draft || load(NAMES_KEY, ['', '', '', '']);
+  const variant = ui.variant || load(VAR_KEY, 'golden');
+  const setVar = (v) => () => { ui.draft = readNames(); ui.variant = v; render(); };
+  return `${state.game ? topbar('', () => go('main')) : ''}
+  <h1>Нова партія</h1>
+  <div class="stack"><div class="q">За якими правилами граємо?</div>
+    ${Object.keys(VARIANTS).map(k => opt(VARIANTS[k].name, VARIANTS[k].sub, variant === k, setVar(k))).join('')}</div>
+  <p class="muted">Впишіть імена чотирьох гравців по колу.</p>
+  <form id="setupForm" class="stack" onsubmit="return false">
+    ${[0, 1, 2, 3].map(i => `<div><label class="lab" for="n${i}">Гравець ${i + 1}</label>
+      <input class="name-in" id="n${i}" maxlength="16" autocomplete="off" autocapitalize="words" enterkeyhint="${i < 3 ? 'next' : 'done'}" value="${esc(pre[i] || '')}"></div>`).join('')}
+    ${ui.err ? `<p class="err">${ui.err}</p>` : ''}
+    <button type="button" class="btn btn-primary btn-big" data-a="${A(startGame)}">Почати</button>
+  </form>`;
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('name-in')) {
+    e.preventDefault();
+    const i = +e.target.id.slice(1);
+    if (i < 3) document.getElementById('n' + (i + 1)).focus(); else e.target.blur();
+  }
+});
+function startGame() {
+  const n = readNames().map(x => x.trim().replace(/\s+/g, ' '));
+  const variant = ui.variant || load(VAR_KEY, 'golden');
+  if (n.some(x => !x)) { ui.draft = n; ui.variant = variant; ui.err = 'Впишіть усі чотири імені.'; return render(); }
+  if (new Set(n.map(x => x.toLowerCase())).size < 4) { ui.draft = n; ui.variant = variant; ui.err = 'Імена не повинні повторюватись.'; return render(); }
+  save(NAMES_KEY, n); save(VAR_KEY, variant);
+  if (state.game) snapshot('нова партія');
+  state.game = { names: n, rounds: [], startJidok: 0, startedAt: Date.now(), variant };
+  persist(); go('main');
+}
+
+// ---------- Головний ----------
+function vMain() {
+  const g = game(), n = names();
+  const count = state.game.rounds.length;
+  return `<div class="topbar"><h1>Рахунок</h1><span class="muted small">${count ? `Роздач: ${count}` : 'Ще не грали'}</span></div>
+  <p class="small muted" style="margin-top:-10px">Правила: ${esc(VARIANTS[V()].name)}</p>
+  <div class="card balances">
+    ${n.map((nm, i) => `<div class="bal"><span class="name">${esc(nm)}</span><span class="val num ${cls(g.balances[i])}">${money(g.balances[i], true)}</span></div>`).join('')}
+  </div>
+  <div class="jidok"><span class="lbl">Жидок<small>гроші на тарілці</small></span><span class="val num">${money(g.jidok)}</span></div>
+  <button class="btn btn-primary btn-big" data-a="${A(() => startWizard(null))}">+ Нова роздача</button>
+  <div class="row">
+    <button class="btn btn-second" data-a="${A(() => go('history'))}">Історія</button>
+    <button class="btn btn-second" data-a="${A(() => go('summary'))}">Підсумок</button>
+  </div>
+  ${undoStack.length ? `<button class="btn btn-text" data-a="${A(undo)}">↶ Скасувати останню дію (${esc(undoStack[undoStack.length - 1].label)})</button>` : ''}
+  <button class="btn btn-text" data-a="${A(() => confirmBox('Почати нову партію? Поточну можна буде повернути кнопкою «Скасувати».', 'Так, нова партія', () => go('setup', { draft: state.game.names, variant: V() }), true))}">Нова партія / почати заново</button>`;
+}
+
+// ---------- Майстер роздачі ----------
+function startWizard(editIndex) {
+  const d = editIndex == null
+    ? { type: null, declarer: null, bid: null, bidVariant: null, partnerSet: false, partner: null, samMode: null, kingMode: null,
+        kupno: null, card: null, kontra: null, won: null, points: null, bonuses: null, burgomaster: null }
+    : Object.assign({ partnerSet: true }, JSON.parse(JSON.stringify(state.game.rounds[editIndex])));
+  if (d.bonuses) d.bonuses.forEach(b => { b.on = true; });
+  go('wizard', { edit: editIndex, d, step: 'type' });
+}
+function isAlone(d) { return (!isK() && d.bid === 'solo') || (d.partnerSet && d.partner == null); }
+function hasVariants(bid) { return isK() && RULES_KOZAK.bids[bid] && RULES_KOZAK.bids[bid].variants; }
+function wSteps(d) {
+  if (isK()) {
+    if (d.type === 'pass') return ['type', 'review'];
+    const s = ['type', 'declarer', 'bid'];
+    if (hasVariants(d.bid)) s.push('bidVariant');
+    s.push('partner');
+    if (d.bid !== 'solo') s.push('card');
+    s.push('kontra', noPts() ? 'result' : 'points', 'bonuses', 'review');
+    return s;
+  }
+  if (d.type === 'trischaken') return ['type', 'burgomaster', 'review'];
+  const s = ['type', 'declarer', 'bid'];
+  if (d.bid !== 'solo') { s.push('partner'); if (isAlone(d)) s.push('samMode'); s.push('kupno'); }
+  s.push('kontra', 'result', 'bonuses', 'review');
+  return s;
+}
+const stepDone = {
+  type: d => !!d.type, declarer: d => d.declarer != null, bid: d => !!d.bid, bidVariant: d => d.bidVariant != null,
+  partner: d => d.partnerSet && (!isK() || d.partner != null || !!d.kingMode),
+  samMode: d => !!d.samMode, kupno: d => !!d.kupno, card: d => d.card != null, kontra: d => !!d.kontra, result: d => d.won != null,
+  points: d => d.points != null && d.points >= 0 && d.points <= 70,
+  bonuses: d => Array.isArray(d.bonuses) && bonusProblem(d) == null, burgomaster: d => d.burgomaster != null, review: () => true,
+};
+function wNext() {
+  const st = wSteps(ui.d), i = st.indexOf(ui.step);
+  if (!stepDone[ui.step](ui.d)) return;
+  if (ui.step === 'bonuses') ui.d.bonuses = ui.d.bonuses.filter(b => b.on);
+  ui.step = st[Math.min(i + 1, st.length - 1)]; render(); window.scrollTo(0, 0);
+}
+function wBack() {
+  const st = wSteps(ui.d), i = st.indexOf(ui.step);
+  if (i <= 0) { if (ui.edit != null) go('detail', { idx: ui.edit }); else go('main'); return; }
+  if (ui.step === 'review' && ui.d.bonuses) ui.d.bonuses.forEach(b => { b.on = true; });
+  ui.step = st[i - 1]; render(); window.scrollTo(0, 0);
+}
+const autoNext = (ms) => setTimeout(() => { if (ui.screen === 'wizard') wNext(); }, ms || 220);
+function pick(field, val, auto = true) {
+  const d = ui.d;
+  const prev = d[field];
+  d[field] = val;
+  if (field === 'declarer' && d.partner === val) { d.partner = null; d.partnerSet = false; d.kingMode = null; }
+  if (isK()) {
+    if (field === 'bid' && prev !== val) { d.bidVariant = hasVariants(val) ? null : 1; d.card = val === 'solo' ? 1 : null; if (d.kingMode && val !== 'solo' && prev === 'solo') d.kingMode = null; }
+    if (field === 'bidVariant' && prev !== val) d.card = null;
+  } else {
+    if (field === 'bid' && val === 'solo') { d.partner = null; d.partnerSet = true; d.samMode = null; d.kupno = 1; }
+    if (field === 'bid' && val !== 'solo' && prev === 'solo') { d.partner = null; d.partnerSet = false; d.kupno = null; }
+  }
+  render();
+  if (auto) autoNext();
+}
+function setPartner(p) { const d = ui.d; d.partner = p; d.partnerSet = true; if (p != null) { d.samMode = null; d.kingMode = null; } render(); autoNext(); }
+function setAlone(mode) { const d = ui.d; d.partner = null; d.partnerSet = true; d.kingMode = mode; render(); autoNext(); }
+function opt(main, sub, sel, fn) {
+  return `<button class="opt ${sel ? 'sel' : ''}" data-a="${A(fn)}"><span class="opt-text"><span>${main}</span>${sub ? `<span class="sub">${sub}</span>` : ''}</span><span class="tick"></span></button>`;
+}
+function sideIds(d, side) {
+  const team = isAlone(d) ? [d.declarer] : [d.declarer, d.partner];
+  return side === 'players' ? team : [0, 1, 2, 3].filter(i => !team.includes(i));
+}
+function teamName(d, side) { const n = names(); return sideIds(d, side).map(i => n[i]).join(', '); }
+
+function vWizard() {
+  const d = ui.d, n = names(), st = wSteps(d), idx = st.indexOf(ui.step);
+  const total = d.type ? st.length : (isK() ? 10 : 9);
+  const K = isK();
+  let body = '';
+  switch (ui.step) {
+    case 'type':
+      body = `<h2>Яка це роздача?</h2><div class="stack">
+        ${opt('Звичайна гра', 'хтось виграв торги', d.type === 'normal', () => pick('type', 'normal'))}
+        ${K ? opt('Всі пас — перероздача', 'нікому нічого не рахується', d.type === 'pass', () => pick('type', 'pass'))
+            : opt('Трішакен', 'всі сказали «пас»', d.type === 'trischaken', () => pick('type', 'trischaken'))}</div>`; break;
+    case 'declarer':
+      body = `<h2>Хто виграв торги?</h2><div class="stack">${n.map((nm, i) => opt(esc(nm), '', d.declarer === i, () => pick('declarer', i))).join('')}</div>`; break;
+    case 'bid': {
+      const R = RR();
+      const sub = (k) => {
+        const b = R.bids[k];
+        if (!K) return `${fmtNum(b.value)} €${k === 'solo' ? ' · завжди сам, без купна' : ''}`;
+        return `${fmtNum(b.value)} € · ${k === 'solo' ? 'без купна' : k === 'odynka' ? 'купується 1 карта' : k === 'dvijka' ? 'купуються 2 карти' : 'купуються 3 карти'}`;
+      };
+      body = `<h2>Яка ставка?</h2>${K ? '<p class="muted">«Сам» вибирається на наступних кроках.</p>' : ''}<div class="stack">${R.bidOrder.map(k => opt(R.bids[k].name, sub(k), d.bid === k, () => pick('bid', k))).join('')}</div>`; break;
+    }
+    case 'bidVariant': {
+      const b = RULES_KOZAK.bids[d.bid];
+      body = `<h2>Яка саме ${b.name.toLowerCase()}?</h2><div class="stack">${b.variants.map((v, i) => opt(kozakBidLabel(d.bid, i + 1), '', d.bidVariant === i + 1, () => pick('bidVariant', i + 1))).join('')}</div>`; break;
+    }
+    case 'partner':
+      if (K) {
+        const T = RULES_KOZAK.kingInTalon;
+        body = `<h2>З ким грає ${esc(n[d.declarer])}?</h2><p class="muted">Хто мав викликаного короля.</p><div class="stack">
+          ${n.map((nm, i) => i === d.declarer ? '' : opt(esc(nm), '', d.partnerSet && d.partner === i, () => setPartner(i))).join('')}
+          <div class="divider">або сам, один проти трьох:</div>
+          ${opt('Сам — викликав свого короля', '', d.partner == null && d.kingMode === 'own', () => setAlone('own'))}
+          ${d.bid !== 'solo' ? opt('Король був у купні — взяв собі', 'без штрафу', d.partner == null && d.kingMode === 'talonTook', () => setAlone('talonTook')) : ''}
+          ${d.bid !== 'solo' ? opt('Король був у купні — свідомо залишив', `штраф ${fmtNum(T.talonConscious)} €`, d.partner == null && d.kingMode === 'talonConscious', () => setAlone('talonConscious')) : ''}
+          ${opt('Король залишився в купні непоміченим', `штраф ${fmtNum(T.talonUnconscious)} €`, d.partner == null && d.kingMode === 'talonUnconscious', () => setAlone('talonUnconscious'))}</div>`;
+      } else {
+        body = `<h2>З ким грає ${esc(n[d.declarer])}?</h2><p class="muted">Хто мав викликаного короля.</p><div class="stack">
+          ${n.map((nm, i) => i === d.declarer ? '' : opt(esc(nm), '', d.partnerSet && d.partner === i, () => setPartner(i))).join('')}
+          ${opt('Сам (один проти трьох)', '', d.partnerSet && d.partner == null, () => setPartner(null))}</div>`;
+      }
+      break;
+    case 'samMode':
+      body = `<h2>Як ${esc(n[d.declarer])} грав сам?</h2><div class="stack">
+        ${opt('Оголосив на початку', `+${fmtNum(RULES.sam.announced)} €`, d.samMode === 'announced', () => pick('samMode', 'announced'))}
+        ${opt('Цар знайшовся в купні', `+${fmtNum(RULES.sam.talon)} €`, d.samMode === 'talon', () => pick('samMode', 'talon'))}</div>`; break;
+    case 'kupno':
+      body = `<h2>Як брали купно?</h2><p class="muted">Важливо лише при програші.</p><div class="stack">
+        ${opt('Взяв з першої спроби', '×1', d.kupno === 1, () => pick('kupno', 1))}
+        ${opt('Дивився інші частини', '×2 при програші', d.kupno === 2, () => pick('kupno', 2))}</div>`; break;
+    case 'card': {
+      const o = kupnoOptions(d.bid, d.bidVariant);
+      const head = `<h2>Котру карту взяв з купна?</h2><p class="muted">Номер карти множить суму лише при програші.</p>`;
+      if (d.bid === 'odynka') {
+        body = `${head}<div class="seg" style="grid-template-columns:repeat(4,1fr)">${o.map(([c]) => `<button class="${d.card === c ? 'sel' : ''}" style="min-height:64px;font-size:22px" data-a="${A(() => pick('card', c))}">${c}</button>`).join('')}</div>
+          <p class="small muted">${kozakBidLabel(d.bid, d.bidVariant)}: перша карта, яку дали, — ${o[0][0]}-та.</p>`;
+      } else {
+        body = `${head}<div class="stack">${o.map(([c, t]) => opt(t, `${c}-та карта · ×${c}`, d.card === c, () => pick('card', c))).join('')}</div>`;
+      }
+      break;
+    }
+    case 'kontra':
+      body = `<h2>Чи була контра на гру?</h2><div class="stack">${RULES.kontra.map(k => opt(k.m === 1 ? 'Ні, не було' : k.name, k.m === 1 ? '' : '×' + k.m, d.kontra === k.m, () => pick('kontra', k.m))).join('')}</div>`; break;
+    case 'result':
+      body = `<h2>${esc(teamName(d, 'players'))}: як зіграли?</h2><div class="stack">
+        ${opt(isAlone(d) ? 'Виграв' : 'Виграли', '36 очок і більше', d.won === true, () => pick('won', true))}
+        ${opt(isAlone(d) ? 'Програв' : 'Програли', '35 очок і менше', d.won === false, () => pick('won', false))}</div>`; break;
+    case 'points': body = vPoints(d); break;
+    case 'bonuses': body = vBonuses(d); break;
+    case 'burgomaster':
+      body = `<h2>Хто бургомістр?</h2><p class="muted">У кого 36 очок і більше. Він платить кожному по ${fmtNum(RULES.trischaken.penalty)} €.</p>
+        <div class="stack">${n.map((nm, i) => opt(esc(nm), '', d.burgomaster === i, () => pick('burgomaster', i))).join('')}</div>`; break;
+    case 'review': body = vReview(d); break;
+  }
+  const isReview = ui.step === 'review';
+  const canNext = stepDone[ui.step](d);
+  const nav = isReview
+    ? `<button class="btn btn-second" data-a="${A(wBack)}">‹ Назад</button><button class="btn btn-primary" data-a="${A(saveRound)}">Зберегти</button>`
+    : `<button class="btn btn-second" data-a="${A(wBack)}">‹ Назад</button><button class="btn btn-primary" ${canNext ? '' : 'disabled'} data-a="${A(wNext)}">Далі ›</button>`;
+  return `<div class="topbar"><span class="stepnum">${ui.edit != null ? `Зміна №${ui.edit + 1} · ` : ''}Крок ${idx + 1} з ${total}</span>
+      <button class="back" style="padding-right:4px" data-a="${A(() => confirmBox('Вийти без збереження цієї роздачі?', 'Так, вийти', () => go('main'), true))}">Вийти ✕</button></div>
+    <div class="progress">${Array.from({ length: total }, (_, i) => `<span class="${i <= idx ? 'on' : ''}"></span>`).join('')}</div>
+    ${body}
+    <div class="wizard-nav"><div class="inner">${nav}</div></div>`;
+}
+
+// Очки: велика клавіатура без системної
+function vPoints(d) {
+  const p = d.points;
+  const press = (k) => () => {
+    let s = p == null ? '' : String(p);
+    if (k === 'del') s = s.slice(0, -1);
+    else if (k === 'clr') s = '';
+    else { s = (s === '0' ? '' : s) + k; if (+s > 70) return; }
+    d.points = s === '' ? null : +s; render();
+  };
+  let status = '<span class="muted">Наберіть число від 0 до 70</span>';
+  if (p != null) {
+    status = p > 35 ? `<span class="plus">Виграли: ${p - 35} понад 35</span>` : `<span class="minus">Програли: бракує ${35 - p} до 35</span>`;
+  }
+  const key = (k, label, extra) => `<button data-fast="1" class="${extra || ''}" data-a="${A(press(k))}">${label}</button>`;
+  return `<h2>Скільки очок зібрали ${esc(teamName(d, 'players'))}?</h2>
+    <div class="pts"><span class="num">${p == null ? '—' : p}</span><small>з 70${p != null ? ` · у супротивників ${70 - p}` : ''}</small></div>
+    <p class="pts-status">${status}</p>
+    <div class="pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(k => key(String(k), k)).join('')}${key('clr', 'Стерти', 'fn')}${key('0', '0')}${key('del', '⌫', 'fn')}</div>`;
+}
+
+function bonusProblem(d) {
+  for (const b of (d.bonuses || [])) {
+    if (!b.on) continue;
+    const def = RR().bonuses[b.key];
+    if (!def.fixedSide && !b.side) return `«${def.name}»: виберіть, чий це бонус.`;
+  }
+  return null;
+}
+function bonusPreview(def, b, d) {
+  const K = isK();
+  const bk = b.kontra || 1;
+  if (def.countBased) {
+    const val = def.perCount * ((b.count || def.minCount) - def.minCount + 1) * bk;
+    const won = draftWon(d);
+    return b.side === 'players' && !won ? { gets: false, v: val, note: ' (при програші — проти них)' } : { gets: true, v: val };
+  }
+  const ann = b.announced && def.announced != null;
+  const done = ann ? b.done !== false : true;
+  const atEnd = K && !ann && b.atEnd && def.atEnd;
+  const val = (ann ? def.announced : atEnd ? def.atEnd : def.silent) * bk;
+  let note = '';
+  if (b.key === 'pagatUltimo') {
+    if (K) note = ann ? (done ? ' + увесь жидок' : ' + доплачують у жидок стільки, скільки там є') : '';
+    else note = done ? ` + ${ann ? 'увесь жидок' : 'половину жидка'}` : '';
+  }
+  return done ? { gets: true, v: val, note } : { gets: false, v: val * (K ? RULES_KOZAK.failedMultiplier : 1), note };
+}
+function vBonuses(d) {
+  const R = RR();
+  if (!Array.isArray(d.bonuses)) d.bonuses = [];
+  const list = R.bonusOrder.filter(k => !(R.bonuses[k].needsPartner && isAlone(d)));
+  const anyOn = d.bonuses.some(b => b.on);
+  const noBonus = () => { d.bonuses = []; render(); autoNext(200); };
+  const toggle = (k) => {
+    const def = R.bonuses[k];
+    let b = d.bonuses.find(x => x.key === k);
+    if (!b) { b = { key: k, side: def.fixedSide || 'players', announced: !!def.countBased, done: true, kontra: 1, on: true }; if (def.countBased) b.count = def.minCount; d.bonuses.push(b); }
+    else b.on = !b.on;
+    render();
+  };
+  const set = (b, f, v) => () => { b[f] = v; if (f === 'announced' && !v) b.done = true; if (f === 'announced' && v) b.atEnd = false; render(); };
+  const items = list.map(k => {
+    const def = R.bonuses[k], b = d.bonuses.find(x => x.key === k), on = b && b.on;
+    const price = def.countBased ? `${def.perCount}–${def.perCount * (def.maxCount - def.minCount + 1)}`
+      : def.announced != null ? `${fmtNum(def.silent)} / голошений ${fmtNum(def.announced)}` : fmtNum(def.silent);
+    let cfg = '';
+    if (on) {
+      const ann = b.announced && def.announced != null;
+      const done = ann ? b.done !== false : true;
+      const side = def.fixedSide || b.side;
+      const sideLbl = teamName(d, side);
+      const pv = bonusPreview(def, b, d);
+      cfg = `<div class="cfg">
+        ${def.fixedSide ? `<p class="small muted">Рахується на користь: ${esc(sideLbl)}</p>` : `<div><div class="q">Чий це бонус?</div><div class="seg two">
+          <button class="${side === 'players' ? 'sel' : ''}" data-a="${A(set(b, 'side', 'players'))}">Ті, що грали<br><span class="small muted">${esc(teamName(d, 'players'))}</span></button>
+          <button class="${side === 'opponents' ? 'sel' : ''}" data-a="${A(set(b, 'side', 'opponents'))}">Супротивники<br><span class="small muted">${esc(teamName(d, 'opponents'))}</span></button></div></div>`}
+        ${def.countBased ? `<div><div class="q">Скільки тароків голосили?</div><div class="seg">
+          ${Array.from({ length: def.maxCount - def.minCount + 1 }, (_, i) => def.minCount + i).map(c => `<button class="${(b.count || def.minCount) === c ? 'sel' : ''}" data-a="${A(set(b, 'count', c))}">${c}<br><span class="small muted">${def.perCount * (c - def.minCount + 1)} €</span></button>`).join('')}</div></div>` : ''}
+        ${!def.countBased && def.announced != null ? `<div><div class="q">Голосили заздалегідь?</div><div class="seg two">
+          <button class="${!ann ? 'sel' : ''}" data-a="${A(set(b, 'announced', false))}">Ні<br><span class="small muted">${fmtNum(def.silent)} €</span></button>
+          <button class="${ann ? 'sel' : ''}" data-a="${A(set(b, 'announced', true))}">Так, голосили<br><span class="small muted">${fmtNum(def.announced)} €</span></button></div></div>` : ''}
+        ${isK() && def.atEnd && !ann ? `<div><div class="q">На останній взятці?</div><div class="seg two">
+          <button class="${!b.atEnd ? 'sel' : ''}" data-a="${A(set(b, 'atEnd', false))}">Ні<br><span class="small muted">${fmtNum(def.silent)} €</span></button>
+          <button class="${b.atEnd ? 'sel' : ''}" data-a="${A(set(b, 'atEnd', true))}">Так, на кінці<br><span class="small muted">${fmtNum(def.atEnd)} €</span></button></div></div>` : ''}
+        ${ann ? `<div><div class="q">Виконали?</div><div class="seg two">
+          <button class="${done ? 'sel' : ''}" data-a="${A(set(b, 'done', true))}">Так</button>
+          <button class="${!done ? 'sel' : ''}" data-a="${A(set(b, 'done', false))}">Ні, не вийшло</button></div></div>` : ''}
+        <div><div class="q">Контра на цей бонус?</div><div class="seg">
+          ${RULES.kontra.map(kk => `<button class="${(b.kontra || 1) === kk.m ? 'sel' : ''}" data-a="${A(set(b, 'kontra', kk.m))}">${kk.m === 1 ? 'Ні' : kk.name + '<br>×' + kk.m}</button>`).join('')}</div></div>
+        <div class="result-pill">${esc(sideLbl)} ${pv.gets ? 'отримують' : 'платять'} ${money(pv.v)}${pv.note || ''}</div>
+      </div>`;
+    }
+    return `<div class="bonus ${on ? 'on' : ''}">${opt(def.name, `${def.hint} · ${price} €`, on, () => toggle(k))}${cfg}</div>`;
+  }).join('');
+  const prob = anyOn ? bonusProblem(d) : null;
+  return `<h2>Чи були бонуси?</h2>
+    <button class="btn btn-primary btn-big" data-a="${A(noBonus)}">Бонусів не було</button>
+    <div class="divider">або позначте, які були:</div>
+    <div class="stack">${items}</div>
+    ${prob ? `<p class="err">${prob}</p>` : ''}`;
+}
+
+function isAloneRound(r) { return (r.type === 'normal') && ((!isK() && r.bid === 'solo') || r.partner == null); }
+function teamNameRound(r, side) {
+  const n = names(), team = isAloneRound(r) ? [r.declarer] : [r.declarer, r.partner];
+  const ids = side === 'players' ? team : [0, 1, 2, 3].filter(i => !team.includes(i));
+  return ids.map(i => n[i]).join(' і ');
+}
+function linesHtml(res, r) {
+  const n = names();
+  const sideTxt = (w) => w === 'players' ? (isAloneRound(r) ? n[r.declarer] : teamNameRound(r, 'players'))
+    : w === 'opponents' ? teamNameRound(r, 'opponents') : '';
+  return `<div class="lines">${res.lines.map(l => {
+    let right;
+    if (l.who === 'none') right = '';
+    else if (l.who === 'jidok') right = `<span class="num plus">+${money(l.amount)}</span>`;
+    else right = `<span class="num ${cls(l.amount)}">${money(l.amount, true)}</span>`;
+    const who = sideTxt(l.who);
+    return `<div class="line"><span>${esc(l.text)}${who ? ` <span class="muted">— ${esc(who)}</span>` : ''}<span class="why">${esc(l.why)}</span></span>${right}</div>`;
+  }).join('')}</div>`;
+}
+function personsHtml(res) {
+  const n = names();
+  return n.map((nm, i) => {
+    const parts = [];
+    if (res.gross[i]) parts.push(`за гру ${money(res.gross[i], true)}`);
+    if (res.taxes[i]) parts.push(`у жидок −${money(res.taxes[i])}`);
+    if (res.payout[i] > 0) parts.push(`з жидка +${money(res.payout[i])}`);
+    if (res.payout[i] < 0) parts.push(`доплата в жидок −${money(-res.payout[i])}`);
+    return `<div class="person"><span class="name">${esc(nm)}</span><span class="total num ${cls(res.deltas[i])}">${money(res.deltas[i], true)}</span>
+      ${parts.length ? `<span class="how">${parts.join(' · ')}</span>` : ''}</div>`;
+  }).join('');
+}
+function bonusesFromDraft(d) {
+  const R = RR();
+  return (d.bonuses || []).filter(b => b.on !== false).map(b => {
+    const def = R.bonuses[b.key];
+    const ann = def.countBased ? true : (!!b.announced && def.announced != null);
+    const o = { key: b.key, side: def.fixedSide || b.side, announced: ann, done: ann ? b.done !== false : true, kontra: b.kontra || 1 };
+    if (def.countBased) o.count = b.count || def.minCount;
+    if (def.atEnd && !ann && b.atEnd) o.atEnd = true;
+    return o;
+  });
+}
+function roundFromDraft(d) {
+  if (isK()) {
+    if (d.type === 'pass') return { type: 'pass' };
+    const alone = d.partner == null;
+    return {
+      type: 'normal', declarer: d.declarer, bid: d.bid, bidVariant: d.bidVariant || 1, partner: alone ? null : d.partner,
+      kingMode: alone ? (d.kingMode || 'own') : null, card: d.bid === 'solo' ? 1 : d.card, kontra: d.kontra, ...(noPts() ? { won: d.won } : { points: d.points }),
+      bonuses: bonusesFromDraft(d),
+    };
+  }
+  if (d.type === 'trischaken') return { type: 'trischaken', burgomaster: d.burgomaster };
+  const alone = isAlone(d);
+  return {
+    type: 'normal', declarer: d.declarer, bid: d.bid, partner: alone ? null : d.partner,
+    samMode: alone && d.bid !== 'solo' ? d.samMode : null, kupno: d.bid === 'solo' ? 1 : d.kupno, kontra: d.kontra, won: d.won,
+    bonuses: bonusesFromDraft(d),
+  };
+}
+function jidokBeforeIndex(idx) {
+  const g = state.game; const rounds = idx == null ? g.rounds : g.rounds.slice(0, idx);
+  return computeGame(rounds, g.startJidok || 0, g.names, V()).jidok;
+}
+function vReview(d) {
+  const r = roundFromDraft(d);
+  const res = calculateRound(r, { jidok: jidokBeforeIndex(ui.edit), names: names(), variant: V() });
+  let head = '';
+  if (r.type === 'normal') {
+    const alone = isAloneRound(r);
+    head = `<p class="small muted">${alone ? `${esc(names()[r.declarer])} сам: кожен із трьох платить йому (або він кожному)` : 'Кожен із пари отримує (або платить) суму за роздачу'}: <b class="num ${cls(res.perS)}">${money(res.perS, true)}</b>${alone ? ` (×3 = ${money(res.perS * 3, true)})` : ''}</p>`;
+  }
+  return `<h2>Перевірте роздачу</h2>
+    <div class="card">${linesHtml(res, r)}</div>
+    ${head}
+    <div class="card"><div class="q">Хто скільки:</div>${personsHtml(res)}</div>
+    <div class="jidok"><span class="lbl">Жидок після роздачі<small>${res.toJidok ? `+${money(res.toJidok)} податку` : 'без податку'}${res.fromJidok ? ` · −${money(res.fromJidok)} за пагат` : ''}${res.jidokIn ? ` · +${money(res.jidokIn)} доплата` : ''}</small></span><span class="val num">${money(res.jidokAfter)}</span></div>`;
+}
+function saveRound() {
+  const r = roundFromDraft(ui.d), g = state.game, n = g.names;
+  const editing = ui.edit != null;
+  snapshot(editing ? `зміна роздачі №${ui.edit + 1}` : `роздача №${g.rounds.length + 1}`);
+  if (editing) g.rounds[ui.edit] = r; else g.rounds.push(r);
+  persist();
+  const idx = editing ? ui.edit : g.rounds.length - 1;
+  const res = game().results[idx];
+  go('main');
+  toast({ title: editing ? `Роздачу №${idx + 1} змінено` : `Роздача №${idx + 1} збережена`, rows: n.map((nm, i) => [nm, res.deltas[i]]), canUndo: true });
+}
+
+// ---------- Історія ----------
+function roundTitle(r) {
+  const n = names();
+  if (r.type === 'trischaken') return `Трішакен · бургомістр ${n[r.burgomaster]}`;
+  if (r.type === 'pass') return 'Всі пас — перероздача';
+  const alone = isAloneRound(r);
+  const who = alone ? `${n[r.declarer]} сам` : `${n[r.declarer]} + ${n[r.partner]}`;
+  let parts;
+  if (isK()) {
+    parts = [kozakBidLabel(r.bid, r.bidVariant), who, ...(noPts() ? [] : [`${r.points} очок`]), roundWon(r) ? 'виграли' : 'програли'];
+    if (r.card > 1) parts.push(`карта ${r.card}`);
+  } else parts = [RULES.bids[r.bid].name, who, r.won ? 'виграли' : 'програли'];
+  if (r.kontra > 1) parts.push(kontraName(r.kontra));
+  const bn = (r.bonuses || []).map(b => RR().bonuses[b.key].name);
+  return parts.join(' · ') + (bn.length ? ' · ' + bn.join(', ') : '');
+}
+function vHistory() {
+  const g = state.game, res = game().results, n = g.names;
+  const items = g.rounds.map((r, i) => ({ r, i })).reverse().map(({ r, i }) => `
+    <button class="hist" data-a="${A(() => go('detail', { idx: i }))}">
+      <div class="h1"><b>№${i + 1}</b>${esc(roundTitle(r))}</div>
+      <div class="deltas">${n.map((nm, k) => `<div><span>${esc(nm)}</span><span class="num ${cls(res[i].deltas[k])}">${money(res[i].deltas[k], true)}</span></div>`).join('')}</div>
+    </button>`).join('');
+  const undoLast = () => confirmBox(`Видалити останню роздачу №${g.rounds.length}?`, 'Так, видалити', () => {
+    snapshot(`видалення роздачі №${g.rounds.length}`); g.rounds.pop(); persist(); render();
+    toast({ title: 'Останню роздачу видалено', canUndo: true });
+  }, true);
+  return `${topbar('Історія', () => go('main'))}
+    ${g.rounds.length ? `<button class="btn btn-danger" data-a="${A(undoLast)}">Скасувати останню роздачу</button>
+      <p class="muted small">Натисніть на роздачу, щоб переглянути, змінити чи видалити.</p>
+      <div class="stack">${items}</div>` : '<p class="muted">Ще не було жодної роздачі.</p>'}`;
+}
+function vDetail() {
+  const g = state.game, i = ui.idx, r = g.rounds[i];
+  if (!r) { ui.screen = 'history'; return vHistory(); }
+  const res = game().results[i];
+  const del = () => confirmBox(`Видалити роздачу №${i + 1}? Рахунок перерахується.`, 'Так, видалити', () => {
+    snapshot(`видалення роздачі №${i + 1}`); g.rounds.splice(i, 1); persist(); go('history');
+    toast({ title: `Роздачу №${i + 1} видалено`, canUndo: true });
+  }, true);
+  return `${topbar(`Роздача №${i + 1}`, () => go('history'))}
+    <p>${esc(roundTitle(r))}</p>
+    <div class="card">${linesHtml(res, r)}</div>
+    <div class="card">${personsHtml(res)}</div>
+    <div class="jidok"><span class="lbl">Жидок<small>до: ${money(res.jidokBefore)}</small></span><span class="val num">${money(res.jidokAfter)}</span></div>
+    <button class="btn btn-primary" data-a="${A(() => startWizard(i))}">Змінити</button>
+    <button class="btn btn-danger" data-a="${A(del)}">Видалити</button>`;
+}
+
+// ---------- Підсумок ----------
+function lastWinners() {
+  const g = state.game, res = game().results;
+  for (let i = g.rounds.length - 1; i >= 0; i--) {
+    const r = g.rounds[i], x = res[i];
+    if (r.type !== 'normal') continue;
+    const won = roundWon(r);
+    return won ? x.team : [0, 1, 2, 3].filter(k => !x.team.includes(k));
+  }
+  return null;
+}
+function vSummary() {
+  const g = game(), n = names().slice();
+  let fin = g.balances.slice(), jidokNote = '', choice = '';
+  if (!isK()) {
+    const share = r4(g.jidok / 4);
+    fin = fin.map(b => r4(b + share));
+    if (g.jidok) jidokNote = `<div class="jidok"><span class="lbl">У жидку ${money(g.jidok)}<small>ділимо порівну: кожному +${money(share)}</small></span></div>`;
+  } else if (g.jidok) {
+    const lw = lastWinners();
+    const mode = ui.jMode;
+    const setMode = (m, host) => () => { ui.jMode = m; ui.host = host; render(); };
+    if (!mode) {
+      choice = `<div class="jidok"><span class="lbl">У жидку ${money(g.jidok)}<small>Що з ним зробити?</small></span></div><div class="stack">
+        ${lw ? opt('Забирають переможці останньої гри', lw.map(i => esc(n[i])).join(', '), false, setMode('last')) : ''}
+        ${opt('Залишається господареві дому', 'за вживання карт', false, setMode('hostPick'))}
+        ${opt('Ділимо порівну', `кожному по ${money(g.jidok / 4)}`, false, setMode('split'))}</div>`;
+    } else if (mode === 'hostPick') {
+      choice = `<h2>Хто господар?</h2><div class="stack">${n.map((nm, i) => opt(esc(nm), '', false, setMode('host', i))).join('')}
+        ${opt('Господар не грає', 'жидок віддаємо йому окремо', false, setMode('host', -1))}</div>
+        <button class="btn btn-text" data-a="${A(setMode(null))}">‹ Інший вибір</button>`;
+    } else {
+      let who = [], label = '';
+      if (mode === 'last') { who = lw || []; label = 'забирають переможці останньої гри'; }
+      if (mode === 'split') { who = [0, 1, 2, 3]; label = 'ділимо порівну'; }
+      if (mode === 'host') { if (ui.host >= 0) { who = [ui.host]; label = `господареві: ${n[ui.host]}`; } else { n.push('Господар'); fin.push(g.jidok); label = 'господареві дому'; } }
+      who.forEach(i => { fin[i] = r4(fin[i] + g.jidok / who.length); });
+      jidokNote = `<div class="jidok"><span class="lbl">Жидок ${money(g.jidok)}<small>${esc(label)}${who.length > 1 ? `: кожному +${money(g.jidok / who.length)}` : ''}</small></span></div>
+        <button class="btn btn-text" data-a="${A(setMode(null))}">Змінити, що робимо з жидком</button>`;
+    }
+  }
+  if (choice) return `${topbar('Підсумок вечора', () => go('main'))}${choice}`;
+  const tr = settle(fin);
+  return `${topbar('Підсумок вечора', () => go('main'))}
+    ${jidokNote}
+    <div class="card balances">
+      ${n.map((nm, i) => `<div class="bal"><span class="name">${esc(nm)}</span><span class="val num ${cls(fin[i])}">${money(fin[i], true)}</span></div>`).join('')}
+    </div>
+    <h2>Хто кому віддає</h2>
+    <div class="card">${tr.length ? tr.map(t => `<div class="transfer"><span class="who">${esc(n[t.from])} <span class="arrow">→</span> ${esc(n[t.to])}</span><span class="amt num">${money(t.amount)}</span></div>`).join('')
+      : '<p class="muted">Ніхто нікому нічого не винен.</p>'}</div>
+    <button class="btn btn-second" data-a="${A(() => confirmBox('Закінчити цю партію й почати нову? Її можна буде повернути кнопкою «Скасувати».', 'Так, нова партія', () => go('setup', { draft: state.game.names, variant: V() }), true))}">Закінчити й почати нову партію</button>`;
+}
+
+// ---------- Кнопка «Назад» телефону ----------
+function handleBack() {
+  if (layer.innerHTML) { closeLayer(); return true; }
+  const s = ui.screen;
+  if (s === 'wizard') { wBack(); return true; }
+  if (s === 'detail') { go('history'); return true; }
+  if (s === 'history' || s === 'summary') { go('main'); return true; }
+  if (s === 'setup' && state.game) { go('main'); return true; }
+  return false;
+}
+try {
+  history.replaceState({ root: true }, '');
+  history.pushState({ app: true }, '');
+  window.addEventListener('popstate', () => { if (handleBack()) history.pushState({ app: true }, ''); });
+} catch (e) {}
+
+// ---------- Запуск ----------
+render();
+try { runTests(); } catch (e) { console.error(e); }
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('service-worker.js').catch(() => {}); });
+}
+</script>
+
+</body>
+</html>
