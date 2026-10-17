@@ -231,7 +231,7 @@ const RULES = {
   },
   bonusOrder: ['toletura', 'pagatUltimo', 'allKings', 'kingUltimo', 'pagatFang', 'mondFang', 'emperor', 'valat'],
   taxRate: 0.10,                           // 10% виграшу в жидок
-  trischaken: { penalty: 10 },             // бургомістр платить кожному
+  trischaken: { burgomaster: 10, most: 5 }, // трішакен: бургомістр (36+) платить кожному по 10; хто набрав найбільше (менше 36) — по 5
 };
 
 // ====================== ПРАВИЛА: «Козацька традиційна» (Ю. М. Левицький, 1992) ======================
@@ -312,7 +312,7 @@ function kontraName(m) { const k = RULES.kontra.find(k => k.m === m); return k ?
  * round: { type:'normal'|'trischaken', declarer, partner (null = сам), bid, samMode:'announced'|'talon',
  *          kupno:1|2, kontra:1|2|4|8, won:bool,
  *          bonuses:[{key, side:'players'|'opponents', announced:bool, done:bool, kontra, players:[idx]}],
- *          burgomaster }
+ *          losers:[idx] (найбільше очок, при нічиїй — кілька), big: 36+ (бургомістр) }
  * settings: { jidok: сума в жидку перед роздачею, names?: [4 імені], rules?: RULES }
  * → { deltas[4], taxes[4], gross[4], payout[4], toJidok, fromJidok, jidokAfter, lines[], team[], alone, perS }
  */
@@ -326,10 +326,17 @@ function calculateRoundGolden(round, settings) {
   let team = [], alone = false, perS = 0, pagat = null;
 
   if (round.type === 'trischaken') {
-    const b = round.burgomaster, p = R.trischaken.penalty;
-    for (let i = 0; i < 4; i++) taxable[i] = i === b ? -3 * p : p;
-    team = [b];
-    lines.push({ text: `Бургомістр ${N[b]} платить кожному по ${money(p)}`, why: '36 і більше очок у трішакені', amount: -3 * p, who: 'b' });
+    // старі записи: { burgomaster: idx } = бургомістр
+    const losers = round.losers || (round.burgomaster != null ? [round.burgomaster] : []);
+    const big = round.losers ? (!!round.big && losers.length === 1) : true;
+    const p = big ? R.trischaken.burgomaster : R.trischaken.most;
+    const others = [0, 1, 2, 3].filter(i => !losers.includes(i));
+    for (const l of losers) for (const i of others) { taxable[l] -= p; taxable[i] += p; }
+    team = losers.slice();
+    for (const l of losers) lines.push({
+      text: big ? `Бургомістр ${N[l]} платить кожному по ${money(p)}` : `${N[l]} платить кожному з ${others.length === 3 ? 'трьох' : others.length === 2 ? 'двох' : 'інших'} по ${money(p)}`,
+      why: big ? '36 і більше очок у трішакені' : losers.length > 1 ? 'найбільше очок порівну, менше 36' : 'найбільше очок, але менше 36',
+      amount: -p * others.length, who: 'b' });
   } else {
     const bid = R.bids[round.bid];
     alone = !!bid.alwaysAlone || round.partner == null;
@@ -577,6 +584,9 @@ function runTests() {
   one('A+B, двійка, купно ×2, контра, програли', N({ declarer: 0, partner: 1, bid: 'dvijka', kupno: 2, kontra: 2, won: false }), [-40, -40, 36, 36], 8);
   one('A сам (оголошено), трійка, виграв', N({ declarer: 0, partner: null, samMode: 'announced' }), [40.5, -15, -15, -15], 4.5);
   one('Трішакен, бургомістр A', { type: 'trischaken', burgomaster: 0 }, [-30, 9, 9, 9], 3);
+  one('Трішакен, бургомістр A (новий запис)', { type: 'trischaken', losers: [0], big: true }, [-30, 9, 9, 9], 3);
+  one('Трішакен, найбільше в A, менше 36', { type: 'trischaken', losers: [0], big: false }, [-15, 4.5, 4.5, 4.5], 1.5);
+  one('Трішакен, нічия A і B', { type: 'trischaken', losers: [0, 1], big: false }, [-10, -10, 9, 9], 2);
   one('Дод.: пагат ультім неголош., жидок 10', N({ declarer: 0, partner: 1, bonuses: [{ key: 'pagatUltimo', side: 'players', announced: false, kontra: 1, }] }), [12.25, 12.25, -10, -10], 5.5, 10);
   one('Дод.: пагат ультім голош., сам, жидок 10', N({ declarer: 0, partner: null, samMode: 'announced', bonuses: [{ key: 'pagatUltimo', side: 'players', announced: true, done: true, kontra: 1 }] }), [85, -25, -25, -25], 0, 10);
   one('Дод.: Сольо програли (без купна і «Сам»)', N({ declarer: 0, partner: null, bid: 'solo', kupno: 2, won: false }), [-60, 18, 18, 18], 6);
@@ -791,9 +801,10 @@ function vAnte() {
 function startWizard(editIndex) {
   const d = editIndex == null
     ? { type: null, declarer: null, bid: null, bidVariant: null, partnerSet: false, partner: null, samMode: null, kingMode: null,
-        kupno: null, card: null, kontra: null, won: null, points: null, bonuses: null, burgomaster: null }
+        kupno: null, card: null, kontra: null, won: null, points: null, bonuses: null, losers: null, big: null }
     : Object.assign({ partnerSet: true }, JSON.parse(JSON.stringify(state.game.rounds[editIndex])));
   if (d.bonuses) d.bonuses.forEach(b => { b.on = true; });
+  if (d.type === 'trischaken' && !d.losers) { d.losers = d.burgomaster != null ? [d.burgomaster] : []; d.big = true; delete d.burgomaster; }
   go('wizard', { edit: editIndex, d, step: 'type' });
 }
 function isAlone(d) { return (!isK() && d.bid === 'solo') || (d.partnerSet && d.partner == null); }
@@ -808,7 +819,7 @@ function wSteps(d) {
     s.push('kontra', noPts() ? 'result' : 'points', 'bonuses', 'review');
     return s;
   }
-  if (d.type === 'trischaken') return ['type', 'burgomaster', 'review'];
+  if (d.type === 'trischaken') return (d.losers && d.losers.length === 1) ? ['type', 'losers', 'big', 'review'] : ['type', 'losers', 'review'];
   const s = ['type', 'declarer', 'bid'];
   if (d.bid !== 'solo') { s.push('partner'); if (isAlone(d)) s.push('samMode'); s.push('kupno'); }
   s.push('kontra', 'result', 'bonuses', 'review');
@@ -819,7 +830,7 @@ const stepDone = {
   partner: d => d.partnerSet && (!isK() || d.partner != null || !!d.kingMode),
   samMode: d => !!d.samMode, kupno: d => !!d.kupno, card: d => d.card != null, kontra: d => !!d.kontra, result: d => d.won != null,
   points: d => d.points != null && d.points >= 0 && d.points <= 70,
-  bonuses: d => Array.isArray(d.bonuses) && bonusProblem(d) == null, burgomaster: d => d.burgomaster != null, review: () => true,
+  bonuses: d => Array.isArray(d.bonuses) && bonusProblem(d) == null, losers: d => Array.isArray(d.losers) && d.losers.length >= 1 && d.losers.length <= 3, big: d => d.big != null, review: () => true,
 };
 function wNext() {
   const st = wSteps(ui.d), i = st.indexOf(ui.step);
@@ -929,9 +940,17 @@ function vWizard() {
         ${opt(isAlone(d) ? 'Програв' : 'Програли', '35 очок і менше', d.won === false, () => pick('won', false))}</div>`; break;
     case 'points': body = vPoints(d); break;
     case 'bonuses': body = vBonuses(d); break;
-    case 'burgomaster':
-      body = `<h2>Хто бургомістр?</h2><p class="muted">У кого 36 очок і більше. Він платить кожному по ${fmtNum(RULES.trischaken.penalty)} €.</p>
-        <div class="stack">${n.map((nm, i) => opt(esc(nm), '', d.burgomaster === i, () => pick('burgomaster', i))).join('')}</div>`; break;
+    case 'losers': {
+      if (!Array.isArray(d.losers)) d.losers = [];
+      const tog = (i) => () => { d.losers = d.losers.includes(i) ? d.losers.filter(x => x !== i) : [...d.losers, i].slice(-3); if (d.losers.length !== 1) d.big = null; render(); };
+      body = `<h2>Хто набрав найбільше очок?</h2><p class="muted">Якщо найбільше порівну в кількох — позначте всіх.</p>
+        <div class="stack">${n.map((nm, i) => opt(esc(nm), '', d.losers.includes(i), tog(i))).join('')}</div>
+        ${d.losers.length > 1 ? `<p class="result-pill">Нічия: кожен із них платить іншим по ${fmtNum(RULES.trischaken.most)} €</p>` : ''}`; break;
+    }
+    case 'big':
+      body = `<h2>Скільки очок у ${esc(n[d.losers[0]])}?</h2><div class="stack">
+        ${opt('36 і більше — бургомістр', `платить кожному по ${fmtNum(RULES.trischaken.burgomaster)} €`, d.big === true, () => pick('big', true))}
+        ${opt('Менше 36', `платить кожному по ${fmtNum(RULES.trischaken.most)} €`, d.big === false, () => pick('big', false))}</div>`; break;
     case 'review': body = vReview(d); break;
   }
   const isReview = ui.step === 'review';
@@ -1101,7 +1120,7 @@ function roundFromDraft(d) {
       bonuses: bonusesFromDraft(d),
     };
   }
-  if (d.type === 'trischaken') return { type: 'trischaken', burgomaster: d.burgomaster };
+  if (d.type === 'trischaken') return { type: 'trischaken', losers: d.losers.slice(), big: d.losers.length === 1 ? !!d.big : false };
   const alone = isAlone(d);
   return {
     type: 'normal', declarer: d.declarer, bid: d.bid, partner: alone ? null : d.partner,
@@ -1142,7 +1161,11 @@ function saveRound() {
 // ---------- Історія ----------
 function roundTitle(r) {
   const n = names();
-  if (r.type === 'trischaken') return `Трішакен · бургомістр ${n[r.burgomaster]}`;
+  if (r.type === 'trischaken') {
+    const ls = r.losers || [r.burgomaster];
+    const big = r.losers ? r.big : true;
+    return big ? `Трішакен · бургомістр ${n[ls[0]]}` : `Трішакен · найбільше очок: ${ls.map(i => n[i]).join(', ')}`;
+  }
   if (r.type === 'pass') return 'Всі пас — перероздача';
   const alone = isAloneRound(r);
   const who = alone ? `${n[r.declarer]} сам` : `${n[r.declarer]} + ${n[r.partner]}`;
