@@ -189,11 +189,43 @@ label.lab { font-weight: 650; font-size: 18px; display: block; margin-bottom: 6p
   .screen { animation: in .18s ease-out; }
   @keyframes in { from { transform: translateY(6px); opacity: .6; } to { transform: none; opacity: 1; } }
 }
+
+/* Заставка: карта перевертається, тримається 0,5 с і зникає */
+#splash { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: var(--bg);
+  transition: opacity .32s ease; cursor: pointer; }
+#splash img { display: block; height: min(72vh, 150vw); width: auto; max-width: 84vw; object-fit: contain;
+  border-radius: 3.6% / 2%; box-shadow: 0 18px 50px rgba(10, 20, 40, .35), 0 2px 6px rgba(10, 20, 40, .2);
+  opacity: 0; transform-origin: 50% 60%; }
+#splash.go img { animation: cardIn .5s cubic-bezier(.2, .9, .25, 1.1) both; }
+#splash.out { opacity: 0; pointer-events: none; }
+#splash.out img { transform: scale(1.06); transition: transform .32s ease; opacity: 1; }
+@keyframes cardIn {
+  0%   { opacity: 0; transform: perspective(1000px) translateY(40px) rotateY(-100deg) rotateZ(-6deg) scale(.7); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: perspective(1000px) translateY(0) rotateY(0) rotateZ(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #splash.go img { animation: fadeOnly .25s ease both; }
+  @keyframes fadeOnly { from { opacity: 0; } to { opacity: 1; } }
+}
 </style>
 </head>
 <body>
 
 
+<div id="splash" aria-hidden="true"><img src="splash.jpg" alt="" decoding="async"></div>
+<script>
+(function () {
+  var sp = document.getElementById('splash'); if (!sp) return;
+  var img = sp.querySelector('img'), done = false;
+  function hide() { if (done) return; done = true; sp.classList.add('out'); setTimeout(function () { sp.remove(); }, 340); }
+  function go() { sp.classList.add('go'); setTimeout(hide, 500 + 500); } // 0,5 с появи + 0,5 с показу
+  sp.addEventListener('click', hide);
+  if (img.complete && img.naturalWidth) go();
+  else { img.addEventListener('load', go); img.addEventListener('error', hide); }
+  setTimeout(function () { if (!sp.classList.contains('go')) hide(); }, 1500); // якщо картинка не встигла — не тримаємо людину
+})();
+</script>
 <div id="app"></div>
 <div id="layer"></div>
 
