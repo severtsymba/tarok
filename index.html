@@ -273,14 +273,24 @@ const RULES_KOZAK = {
   bonusOrder: ['taroks', 'toletura', 'pagatUltimo', 'pagatFang', 'allKings', 'kingUltimo', 'kingFang', 'mondFang', 'valat'],
   taxRate: 0.10,
 };
+// «Золотий на трьох»: як Золотий, але 3 гравці; той, хто виграв торги, завжди грає сам проти двох,
+// короля не викликають — немає бонусу «Сам» і «Царя на кінці»; трішакен як у Золотому, але платять двом
+const RULES_GOLDEN3 = Object.assign({}, RULES, {
+  players: 3,
+  bids: Object.fromEntries(Object.entries(RULES.bids).map(([k, b]) => [k, Object.assign({}, b, { alwaysAlone: true, noSamBonus: true })])),
+  bonuses: Object.fromEntries(Object.entries(RULES.bonuses).filter(([k]) => k !== 'kingUltimo')),
+  bonusOrder: RULES.bonusOrder.filter(k => k !== 'kingUltimo'),
+});
 // «Козацька новітня»: торги, купно, бонуси й жидок як у традиційній, але очки не рахуються — лише виграли/програли
 const RULES_KOZAK_NEW = Object.assign({}, RULES_KOZAK, { noPoints: true });
 const VARIANTS = {
   golden: { name: 'Золотий Галицький', sub: 'Львів, 2026 · ставка, купно ×1/×2, трішакен' },
+  golden3: { name: 'Золотий на трьох', sub: '3 гравці · один проти двох, без виклику короля' },
   kozak:  { name: 'Козацька традиційна', sub: 'за Юрієм Мирославом Левицьким, 1992 · очки понад 35, карта з купна' },
   kozakNew: { name: 'Козацька новітня', sub: 'як традиційна, але без очок: лише виграли чи програли' },
 };
-function rulesFor(variant) { return variant === 'kozak' ? RULES_KOZAK : variant === 'kozakNew' ? RULES_KOZAK_NEW : RULES; }
+function rulesFor(variant) { return variant === 'kozak' ? RULES_KOZAK : variant === 'kozakNew' ? RULES_KOZAK_NEW : variant === 'golden3' ? RULES_GOLDEN3 : RULES; }
+function playersFor(variant) { return rulesFor(variant).players || 4; }
 function kozakBidLabel(bid, v) {
   const b = RULES_KOZAK.bids[bid]; if (!b) return '';
   if (!b.variants || !v || v === 1) return b.name;
@@ -295,6 +305,8 @@ function kupnoOptions(bid, v) {
   return [[1, 'Без купна']];
 }
 
+const range = (n) => Array.from({ length: n }, (_, i) => i);
+const zeros = (n) => Array.from({ length: n }, () => 0);
 function r4(x) { const v = Math.round(x * 10000) / 10000; return Object.is(v, -0) ? 0 : v; }
 function fmtNum(x) {
   let v = Math.round(x * 100) / 100; if (Object.is(v, -0)) v = 0;
@@ -319,9 +331,11 @@ function kontraName(m) { const k = RULES.kontra.find(k => k.m === m); return k ?
 function calculateRoundGolden(round, settings) {
   settings = settings || {};
   const R = settings.rules || RULES;
-  const N = settings.names || ['Гравець 1', 'Гравець 2', 'Гравець 3', 'Гравець 4'];
+  const NP = R.players || 4;               // кількість гравців: 4 або 3
+  const IDX = range(NP);
+  const N = settings.names || IDX.map(i => `Гравець ${i + 1}`);
   const jidokBefore = settings.jidok || 0;
-  const taxable = [0, 0, 0, 0], untaxed = [0, 0, 0, 0];
+  const taxable = zeros(NP), untaxed = zeros(NP);
   const lines = [];
   let team = [], alone = false, perS = 0, pagat = null;
 
@@ -330,7 +344,7 @@ function calculateRoundGolden(round, settings) {
     const losers = round.losers || (round.burgomaster != null ? [round.burgomaster] : []);
     const big = round.losers ? (!!round.big && losers.length === 1) : true;
     const p = big ? R.trischaken.burgomaster : R.trischaken.most;
-    const others = [0, 1, 2, 3].filter(i => !losers.includes(i));
+    const others = IDX.filter(i => !losers.includes(i));
     for (const l of losers) for (const i of others) { taxable[l] -= p; taxable[i] += p; }
     team = losers.slice();
     for (const l of losers) lines.push({
@@ -379,23 +393,23 @@ function calculateRoundGolden(round, settings) {
       lines.push({ text: def.name, why: p.join(' · '), amount: v, who: b.side === 'opponents' ? 'opponents' : 'players' });
       if (b.key === 'pagatUltimo' && done) {
         // Жидок отримує вся сторона, що зробила пагат: пара — навпіл, сам — один.
-        const who = b.side === 'opponents' ? [0, 1, 2, 3].filter(i => !team.includes(i)) : team.slice();
+        const who = b.side === 'opponents' ? IDX.filter(i => !team.includes(i)) : team.slice();
         pagat = { share: ann ? def.jidokShareAnnounced : def.jidokShareSilent, who, ann };
       }
     }
 
     perS = r4(sTax + sUntax);
-    for (let i = 0; i < 4; i++) {
-      const m = team.includes(i) ? (alone ? 3 : 1) : -1;
+    for (const i of IDX) {
+      const m = team.includes(i) ? (alone ? NP - 1 : 1) : -1;
       taxable[i] = sTax * m; untaxed[i] = sUntax * m;
     }
   }
 
-  const gross = [0, 1, 2, 3].map(i => r4(taxable[i] + untaxed[i]));
-  const taxes = [0, 1, 2, 3].map(i => r4(Math.max(0, Math.min(taxable[i], gross[i])) * R.taxRate));
+  const gross = IDX.map(i => r4(taxable[i] + untaxed[i]));
+  const taxes = IDX.map(i => r4(Math.max(0, Math.min(taxable[i], gross[i])) * R.taxRate));
   const toJidok = r4(taxes.reduce((a, b) => a + b, 0));
   const available = r4(jidokBefore + toJidok);
-  const payout = [0, 0, 0, 0];
+  const payout = zeros(NP);
   let fromJidok = 0;
   if (pagat) {
     fromJidok = r4(available * pagat.share);
@@ -404,18 +418,19 @@ function calculateRoundGolden(round, settings) {
     lines.push({ text: `Жидок за пагат ультім: ${pagat.who.map(i => N[i]).join(' і ')}`,
       why: `${pagat.ann ? '100%' : '50%'} від ${money(available)}${pagat.who.length === 2 ? ', навпіл' : pagat.who.length > 2 ? `, на ${pagat.who.length}` : ''}`, amount: fromJidok, who: 'jidok' });
   }
-  const deltas = [0, 1, 2, 3].map(i => r4(gross[i] - taxes[i] + payout[i]));
+  const deltas = IDX.map(i => r4(gross[i] - taxes[i] + payout[i]));
   return { deltas, taxes, gross, payout, toJidok, fromJidok, jidokAfter: r4(available - fromJidok), lines, team, alone, perS };
 }
 
 
 /** Спільне завершення роздачі: податок у жидок, виплата або доплата жидка. */
 function finishRound(taxable, untaxed, jidokBefore, taxRate, op, N, lines) {
-  const gross = [0, 1, 2, 3].map(i => r4(taxable[i] + untaxed[i]));
-  const taxes = [0, 1, 2, 3].map(i => r4(Math.max(0, Math.min(taxable[i], gross[i])) * taxRate));
+  const IDX = range(taxable.length);
+  const gross = IDX.map(i => r4(taxable[i] + untaxed[i]));
+  const taxes = IDX.map(i => r4(Math.max(0, Math.min(taxable[i], gross[i])) * taxRate));
   const toJidok = r4(taxes.reduce((a, b) => a + b, 0));
   const available = r4(jidokBefore + toJidok);
-  const payout = [0, 0, 0, 0];
+  const payout = zeros(taxable.length);
   let fromJidok = 0, jidokIn = 0;
   if (op && op.who.length) {
     if (op.type === 'take') {
@@ -430,7 +445,7 @@ function finishRound(taxable, untaxed, jidokBefore, taxRate, op, N, lines) {
         why: `стільки, скільки там є: ${money(available)}${op.who.length === 2 ? ', навпіл' : ''}`, amount: -jidokIn, who: 'jidokpay' });
     }
   }
-  const deltas = [0, 1, 2, 3].map(i => r4(gross[i] - taxes[i] + payout[i]));
+  const deltas = IDX.map(i => r4(gross[i] - taxes[i] + payout[i]));
   return { deltas, taxes, gross, payout, toJidok, fromJidok, jidokIn, jidokAfter: r4(available - fromJidok + jidokIn) };
 }
 
@@ -512,20 +527,21 @@ function calculateRoundKozak(round, settings) {
 function calculateRound(round, settings) {
   settings = settings || {};
   if (settings.variant === 'kozak' || settings.variant === 'kozakNew') return calculateRoundKozak(round, Object.assign({ rules: rulesFor(settings.variant) }, settings));
-  return calculateRoundGolden(round, settings);
+  return calculateRoundGolden(round, Object.assign({ rules: rulesFor(settings.variant) }, settings));
 }
 
 /** Перерахунок усієї партії з історії. Баланс ніде не зберігається окремо. */
 function computeGame(rounds, startJidok, names, variant, ante) {
   // ante: початковий внесок кожного гравця в жидок (на початку партії)
   const a = ante || 0;
-  let jidok = r4((startJidok || 0) + 4 * a);
-  const bal = [-a, -a, -a, -a].map(r4);
+  const NP = playersFor(variant);
+  let jidok = r4((startJidok || 0) + NP * a);
+  const bal = zeros(NP).map(() => r4(-a));
   const results = [];
   for (const r of rounds) {
     const res = calculateRound(r, { jidok, names, variant });
     res.jidokBefore = jidok;
-    for (let i = 0; i < 4; i++) bal[i] = r4(bal[i] + res.deltas[i]);
+    for (let i = 0; i < NP; i++) bal[i] = r4(bal[i] + res.deltas[i]);
     jidok = res.jidokAfter;
     res.balAfter = bal.slice();
     results.push(res);
@@ -607,6 +623,19 @@ function runTests() {
   ok('цар фанг на кінці', K({ bonuses: [{ key: 'kingFang', side: 'opponents', atEnd: true, kontra: 1 }] }), [0, 0, 0, 0], 0);
   ok('свідомо залишив короля, 38 очок', K({ partner: null, kingMode: 'talonConscious', points: 38 }), [-6, 1.8, 1.8, 1.8], 0.6);
   ok('всі пас', { type: 'pass' }, [0, 0, 0, 0], 0);
+  // ---- «Золотий на трьох» ----
+  const n3 = ['Северин', 'Ярина', 'Остап'];
+  const g3 = (label, rounds, exp, ej, j0, ante) => { const g = computeGame(rounds, j0 || 0, n3, 'golden3', ante); check('На трьох: ' + label, g.balances, exp, g.jidok, ej); };
+  const N3 = (o) => Object.assign({ type: 'normal', bid: 'trijka', kupno: 1, kontra: 1, won: true, bonuses: [], declarer: 0, partner: null }, o);
+  g3('трійка, виграв', [N3({})], [9, -5, -5], 1);
+  g3('двійка, купно ×2, контра, програв', [N3({ bid: 'dvijka', kupno: 2, kontra: 2, won: false })], [-80, 36, 36], 8);
+  g3('трійка, виграв, неголошена толетура', [N3({ bonuses: [{ key: 'toletura', side: 'players', announced: false, kontra: 1 }] })], [18, -10, -10], 2);
+  g3('сольо програв (без купна)', [N3({ bid: 'solo', kupno: 2, won: false })], [-40, 18, 18], 4);
+  g3('пагат ультім голош. у супротивників, жидок 10', [N3({ bonuses: [{ key: 'pagatUltimo', side: 'opponents', announced: true, done: true, kontra: 1 }] })], [-10, 10, 10], 0, 10);
+  g3('трішакен, найбільше в A, менше 36', [{ type: 'trischaken', losers: [0], big: false }], [-10, 4.5, 4.5], 1);
+  g3('трішакен, бургомістр A', [{ type: 'trischaken', losers: [0], big: true }], [-20, 9, 9], 2);
+  g3('трішакен, нічия A і B', [{ type: 'trischaken', losers: [0, 1], big: false }], [-5, -5, 9], 1);
+  g3('початковий внесок по 2 €', [], [-2, -2, -2], 6, 0, 2);
   // ---- Початковий внесок у жидок ----
   { const g = computeGame([], 0, names, 'golden', 2); check('Внесок по 2 € на початку', g.balances, [-2, -2, -2, -2], g.jidok, 8); }
   { const g = computeGame([K({ bonuses: [{ key: 'pagatUltimo', side: 'players', announced: true, done: true, kontra: 1 }] })], 0, names, 'kozak', 2.5);
@@ -655,6 +684,9 @@ const noPts = () => V() === 'kozakNew';
 function draftWon(d) { return noPts() ? d.won === true : d.points > 35; }
 function roundWon(r) { return isK() ? (noPts() ? !!r.won : r.points > 35) : r.won; }
 function RR() { return rulesFor(V()); }
+const NPl = () => playersFor(V());
+const IDXp = () => range(NPl());
+const is3 = () => V() === 'golden3';
 function names() { return state.game ? state.game.names : ['', '', '', '']; }
 function game() { const g = state.game; return computeGame(g.rounds, g.startJidok || 0, g.names, V(), g.ante); }
 
@@ -710,6 +742,7 @@ function toast({ title, rows, canUndo }) {
 
 // ---------- Нова партія ----------
 function readNames() { return [0, 1, 2, 3].map(i => { const el = document.getElementById('n' + i); return el ? el.value : ''; }); }
+function setupCount() { return playersFor(ui.variant || load(VAR_KEY, 'golden')); }
 function vSetup() {
   const pre = ui.draft || load(NAMES_KEY, ['', '', '', '']);
   const variant = ui.variant || load(VAR_KEY, 'golden');
@@ -718,10 +751,10 @@ function vSetup() {
   <h1>Нова партія</h1>
   <div class="stack"><div class="q">За якими правилами граємо?</div>
     ${Object.keys(VARIANTS).map(k => opt(VARIANTS[k].name, VARIANTS[k].sub, variant === k, setVar(k))).join('')}</div>
-  <p class="muted">Впишіть імена чотирьох гравців по колу.</p>
+  <p class="muted">Впишіть імена ${playersFor(variant) === 3 ? 'трьох' : 'чотирьох'} гравців по колу.</p>
   <form id="setupForm" class="stack" onsubmit="return false">
-    ${[0, 1, 2, 3].map(i => `<div><label class="lab" for="n${i}">Гравець ${i + 1}</label>
-      <input class="name-in" id="n${i}" maxlength="16" autocomplete="off" autocapitalize="words" enterkeyhint="${i < 3 ? 'next' : 'done'}" value="${esc(pre[i] || '')}"></div>`).join('')}
+    ${range(playersFor(variant)).map(i => `<div><label class="lab" for="n${i}">Гравець ${i + 1}</label>
+      <input class="name-in" id="n${i}" maxlength="16" autocomplete="off" autocapitalize="words" enterkeyhint="${i < playersFor(variant) - 1 ? 'next' : 'done'}" value="${esc(pre[i] || '')}"></div>`).join('')}
     ${ui.err ? `<p class="err">${ui.err}</p>` : ''}
     <button type="button" class="btn btn-primary btn-big" data-a="${A(startGame)}">Почати</button>
   </form>`;
@@ -730,15 +763,18 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('name-in')) {
     e.preventDefault();
     const i = +e.target.id.slice(1);
-    if (i < 3) document.getElementById('n' + (i + 1)).focus(); else e.target.blur();
+    const nx = document.getElementById('n' + (i + 1)); if (nx) nx.focus(); else e.target.blur();
   }
 });
 function startGame() {
-  const n = readNames().map(x => x.trim().replace(/\s+/g, ' '));
   const variant = ui.variant || load(VAR_KEY, 'golden');
-  if (n.some(x => !x)) { ui.draft = n; ui.variant = variant; ui.err = 'Впишіть усі чотири імені.'; return render(); }
-  if (new Set(n.map(x => x.toLowerCase())).size < 4) { ui.draft = n; ui.variant = variant; ui.err = 'Імена не повинні повторюватись.'; return render(); }
-  save(NAMES_KEY, n); save(VAR_KEY, variant);
+  const cnt = playersFor(variant);
+  const all = readNames().map(x => x.trim().replace(/\s+/g, ' '));
+  const n = all.slice(0, cnt);
+  if (n.some(x => !x)) { ui.draft = all; ui.variant = variant; ui.err = cnt === 3 ? 'Впишіть усі три імені.' : 'Впишіть усі чотири імені.'; return render(); }
+  if (new Set(n.map(x => x.toLowerCase())).size < cnt) { ui.draft = all; ui.variant = variant; ui.err = 'Імена не повинні повторюватись.'; return render(); }
+  const prevNames = load(NAMES_KEY, ['', '', '', '']);
+  save(NAMES_KEY, [0, 1, 2, 3].map(i => n[i] || prevNames[i] || '')); save(VAR_KEY, variant);
   if (state.game) snapshot('нова партія');
   state.game = { names: n, rounds: [], startJidok: 0, startedAt: Date.now(), variant };
   persist(); go('main');
@@ -788,12 +824,12 @@ function vAnte() {
   const shown = ui.typed != null ? ui.typed : v == null ? '—' : fmtNum(v);
   return `${topbar('', () => go('main'))}
     <h2>Скільки кожен кладе в жидок на початку партії?</h2>
-    <p class="muted">Усі четверо кладуть однаково. Ці гроші одразу лягають на тарілку.</p>
+    <p class="muted">Усі ${NPl() === 3 ? 'троє' : 'четверо'} кладуть однаково. Ці гроші одразу лягають на тарілку.</p>
     <div class="seg" style="grid-template-columns:repeat(3,1fr)">${presets.map(x => `<button class="${v === x && ui.typed == null ? 'sel' : ''}" style="min-height:64px;font-size:22px" data-a="${A(setV(x))}">${x ? fmtNum(x) + ' €' : 'Нічого'}</button>`).join('')}</div>
     <div class="divider">або наберіть свою суму:</div>
     <div class="pts"><span class="num">${esc(shown)}</span><small>€ з кожного</small></div>
     <div class="pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(k => key(String(k), k)).join('')}${key(',', ',', 'fn')}${key('0', '0')}${key('del', '⌫', 'fn')}</div>
-    ${v != null ? `<p class="pts-status">У жидку буде ${money(4 * v)}</p>` : ''}
+    ${v != null ? `<p class="pts-status">У жидку буде ${money(NPl() * v)}</p>` : ''}
     <button class="btn btn-primary btn-big" ${v == null ? 'disabled' : ''} data-a="${A(confirm)}">${editing ? 'Зберегти' : 'Далі — до першої роздачі'}</button>`;
 }
 
@@ -807,7 +843,7 @@ function startWizard(editIndex) {
   if (d.type === 'trischaken' && !d.losers) { d.losers = d.burgomaster != null ? [d.burgomaster] : []; d.big = true; delete d.burgomaster; }
   go('wizard', { edit: editIndex, d, step: 'type' });
 }
-function isAlone(d) { return (!isK() && d.bid === 'solo') || (d.partnerSet && d.partner == null); }
+function isAlone(d) { return is3() || (!isK() && d.bid === 'solo') || (d.partnerSet && d.partner == null); }
 function hasVariants(bid) { return isK() && RULES_KOZAK.bids[bid] && RULES_KOZAK.bids[bid].variants; }
 function wSteps(d) {
   if (isK()) {
@@ -820,6 +856,7 @@ function wSteps(d) {
     return s;
   }
   if (d.type === 'trischaken') return (d.losers && d.losers.length === 1) ? ['type', 'losers', 'big', 'review'] : ['type', 'losers', 'review'];
+  if (is3()) { const s3 = ['type', 'declarer', 'bid']; if (d.bid !== 'solo') s3.push('kupno'); s3.push('kontra', 'result', 'bonuses', 'review'); return s3; }
   const s = ['type', 'declarer', 'bid'];
   if (d.bid !== 'solo') { s.push('partner'); if (isAlone(d)) s.push('samMode'); s.push('kupno'); }
   s.push('kontra', 'result', 'bonuses', 'review');
@@ -830,7 +867,7 @@ const stepDone = {
   partner: d => d.partnerSet && (!isK() || d.partner != null || !!d.kingMode),
   samMode: d => !!d.samMode, kupno: d => !!d.kupno, card: d => d.card != null, kontra: d => !!d.kontra, result: d => d.won != null,
   points: d => d.points != null && d.points >= 0 && d.points <= 70,
-  bonuses: d => Array.isArray(d.bonuses) && bonusProblem(d) == null, losers: d => Array.isArray(d.losers) && d.losers.length >= 1 && d.losers.length <= 3, big: d => d.big != null, review: () => true,
+  bonuses: d => Array.isArray(d.bonuses) && bonusProblem(d) == null, losers: d => Array.isArray(d.losers) && d.losers.length >= 1 && d.losers.length <= NPl() - 1, big: d => d.big != null, review: () => true,
 };
 function wNext() {
   const st = wSteps(ui.d), i = st.indexOf(ui.step);
@@ -867,7 +904,7 @@ function opt(main, sub, sel, fn) {
 }
 function sideIds(d, side) {
   const team = isAlone(d) ? [d.declarer] : [d.declarer, d.partner];
-  return side === 'players' ? team : [0, 1, 2, 3].filter(i => !team.includes(i));
+  return side === 'players' ? team : IDXp().filter(i => !team.includes(i));
 }
 function teamName(d, side) { const n = names(); return sideIds(d, side).map(i => n[i]).join(', '); }
 
@@ -942,7 +979,7 @@ function vWizard() {
     case 'bonuses': body = vBonuses(d); break;
     case 'losers': {
       if (!Array.isArray(d.losers)) d.losers = [];
-      const tog = (i) => () => { d.losers = d.losers.includes(i) ? d.losers.filter(x => x !== i) : [...d.losers, i].slice(-3); if (d.losers.length !== 1) d.big = null; render(); };
+      const tog = (i) => () => { d.losers = d.losers.includes(i) ? d.losers.filter(x => x !== i) : [...d.losers, i].slice(-(NPl() - 1)); if (d.losers.length !== 1) d.big = null; render(); };
       body = `<h2>Хто набрав найбільше очок?</h2><p class="muted">Якщо найбільше порівну в кількох — позначте всіх.</p>
         <div class="stack">${n.map((nm, i) => opt(esc(nm), '', d.losers.includes(i), tog(i))).join('')}</div>
         ${d.losers.length > 1 ? `<p class="result-pill">Нічия: кожен із них платить іншим по ${fmtNum(RULES.trischaken.most)} €</p>` : ''}`; break;
@@ -1068,10 +1105,10 @@ function vBonuses(d) {
     ${prob ? `<p class="err">${prob}</p>` : ''}`;
 }
 
-function isAloneRound(r) { return (r.type === 'normal') && ((!isK() && r.bid === 'solo') || r.partner == null); }
+function isAloneRound(r) { return (r.type === 'normal') && (is3() || (!isK() && r.bid === 'solo') || r.partner == null); }
 function teamNameRound(r, side) {
   const n = names(), team = isAloneRound(r) ? [r.declarer] : [r.declarer, r.partner];
-  const ids = side === 'players' ? team : [0, 1, 2, 3].filter(i => !team.includes(i));
+  const ids = side === 'players' ? team : IDXp().filter(i => !team.includes(i));
   return ids.map(i => n[i]).join(' і ');
 }
 function linesHtml(res, r) {
@@ -1138,7 +1175,7 @@ function vReview(d) {
   let head = '';
   if (r.type === 'normal') {
     const alone = isAloneRound(r);
-    head = `<p class="small muted">${alone ? `${esc(names()[r.declarer])} сам: кожен із трьох платить йому (або він кожному)` : 'Кожен із пари отримує (або платить) суму за роздачу'}: <b class="num ${cls(res.perS)}">${money(res.perS, true)}</b>${alone ? ` (×3 = ${money(res.perS * 3, true)})` : ''}</p>`;
+    head = `<p class="small muted">${alone ? `${esc(names()[r.declarer])} сам: кожен із ${NPl() === 3 ? 'двох' : 'трьох'} платить йому (або він кожному)` : 'Кожен із пари отримує (або платить) суму за роздачу'}: <b class="num ${cls(res.perS)}">${money(res.perS, true)}</b>${alone ? ` (×${NPl() - 1} = ${money(res.perS * (NPl() - 1), true)})` : ''}</p>`;
   }
   return `<h2>Перевірте роздачу</h2>
     <div class="card">${linesHtml(res, r)}</div>
@@ -1218,7 +1255,7 @@ function lastWinners() {
     const r = g.rounds[i], x = res[i];
     if (r.type !== 'normal') continue;
     const won = roundWon(r);
-    return won ? x.team : [0, 1, 2, 3].filter(k => !x.team.includes(k));
+    return won ? x.team : IDXp().filter(k => !x.team.includes(k));
   }
   return null;
 }
@@ -1226,7 +1263,7 @@ function vSummary() {
   const g = game(), n = names().slice();
   let fin = g.balances.slice(), jidokNote = '', choice = '';
   if (!isK()) {
-    const share = r4(g.jidok / 4);
+    const share = r4(g.jidok / NPl());
     fin = fin.map(b => r4(b + share));
     if (g.jidok) jidokNote = `<div class="jidok"><span class="lbl">У жидку ${money(g.jidok)}<small>ділимо порівну: кожному +${money(share)}</small></span></div>`;
   } else if (g.jidok) {
@@ -1237,7 +1274,7 @@ function vSummary() {
       choice = `<div class="jidok"><span class="lbl">У жидку ${money(g.jidok)}<small>Що з ним зробити?</small></span></div><div class="stack">
         ${lw ? opt('Забирають переможці останньої гри', lw.map(i => esc(n[i])).join(', '), false, setMode('last')) : ''}
         ${opt('Залишається господареві дому', 'за вживання карт', false, setMode('hostPick'))}
-        ${opt('Ділимо порівну', `кожному по ${money(g.jidok / 4)}`, false, setMode('split'))}</div>`;
+        ${opt('Ділимо порівну', `кожному по ${money(g.jidok / NPl())}`, false, setMode('split'))}</div>`;
     } else if (mode === 'hostPick') {
       choice = `<h2>Хто господар?</h2><div class="stack">${n.map((nm, i) => opt(esc(nm), '', false, setMode('host', i))).join('')}
         ${opt('Господар не грає', 'жидок віддаємо йому окремо', false, setMode('host', -1))}</div>
@@ -1245,7 +1282,7 @@ function vSummary() {
     } else {
       let who = [], label = '';
       if (mode === 'last') { who = lw || []; label = 'забирають переможці останньої гри'; }
-      if (mode === 'split') { who = [0, 1, 2, 3]; label = 'ділимо порівну'; }
+      if (mode === 'split') { who = IDXp(); label = 'ділимо порівну'; }
       if (mode === 'host') { if (ui.host >= 0) { who = [ui.host]; label = `господареві: ${n[ui.host]}`; } else { n.push('Господар'); fin.push(g.jidok); label = 'господареві дому'; } }
       who.forEach(i => { fin[i] = r4(fin[i] + g.jidok / who.length); });
       jidokNote = `<div class="jidok"><span class="lbl">Жидок ${money(g.jidok)}<small>${esc(label)}${who.length > 1 ? `: кожному +${money(g.jidok / who.length)}` : ''}</small></span></div>

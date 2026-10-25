@@ -1,5 +1,5 @@
 // Офлайн-кеш. Змініть VERSION після оновлення index.html, щоб телефони підхопили нову версію.
-const VERSION = 'tarok-v7';
+const VERSION = 'tarok-v8';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
