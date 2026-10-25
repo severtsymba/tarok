@@ -1,6 +1,6 @@
 // Офлайн-кеш. Змініть VERSION після оновлення index.html, щоб телефони підхопили нову версію.
-const VERSION = 'tarok-v9';
-const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './splash.jpg'];
+const VERSION = 'tarok-v10';
+const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './splash.jpg', './fonts/old-standard-tt-cyrillic-400-italic.woff2', './fonts/old-standard-tt-cyrillic-400-normal.woff2', './fonts/old-standard-tt-cyrillic-700-normal.woff2', './fonts/old-standard-tt-latin-400-italic.woff2', './fonts/old-standard-tt-latin-400-normal.woff2', './fonts/old-standard-tt-latin-700-normal.woff2', './fonts/pt-sans-cyrillic-400-normal.woff2', './fonts/pt-sans-cyrillic-700-normal.woff2', './fonts/pt-sans-latin-400-normal.woff2', './fonts/pt-sans-latin-700-normal.woff2'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -17,8 +17,7 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  const isFont = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  if (url.origin !== location.origin && !isFont) return;
+  if (url.origin !== location.origin) return;
 
   // Сторінка: спершу мережа (щоб бачити оновлення), без мережі — кеш.
   if (req.mode === 'navigate') {
